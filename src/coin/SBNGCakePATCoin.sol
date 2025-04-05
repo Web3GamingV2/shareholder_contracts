@@ -38,7 +38,26 @@ contract PAT is
         _;
     }
 
-    function initialize(uint256 _initialSupply, address _owner, address _redemptionPool) initializer public {
+    modifier onlyAllowedMintRecipients(address _recipient) {
+        require(allowedMintRecipients[_recipient], SBNGC_PATToken_NotAllowedMintRecipientsAddress(_recipient));
+        _;
+    }
+
+    modifier onlyAllowedMultiSigWalletAndOwnCall(address _multiSigWallet) {
+        require(msg.sender == _multiSigWallet || msg.sender == owner(), SBNGC_PATToken_NotAllowedMintMultiSigWallet(msg.sender));
+        _;
+    }
+
+    modifier onlyAllowedMultiSigWalletCall(address _multiSigWallet) {
+        require(msg.sender == _multiSigWallet, SBNGC_PATToken_NotAllowedMintMultiSigWallet(msg.sender));
+        _;
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return 6;
+    }
+
+    function initialize(address _owner, address _redemptionPool, address _multiSigWallet) initializer public {
         require(_owner != address(0), SBNGC_PATToken_ImproperlyInitialized());
         require(_redemptionPool != address(0), SBNGC_PATToken_ImproperlyInitialized());
         __ERC20_init(NAME, SYMBOL);
@@ -49,23 +68,14 @@ contract PAT is
         __Pausable_init();
         __UUPSUpgradeable_init();
         redemptionPool = _redemptionPool;
-         // 设置默认铸造上限为总供应量的 10%
+        multiSigWallet = _multiSigWallet;
+         // 设置默认铸造上限为总供应量的 5%
         mintCapNumerator = MINT_CAP_MAX_NUMERATOR;
-
-        if (_initialSupply > 0) {
-            _mint(_owner, _initialSupply);
-            lastMintTime = block.timestamp;
-            mintedSupply = _initialSupply;
-            emit MintPerformed(_owner, _initialSupply, totalSupply());
-        }
-    }
-
-    function decimals() public view virtual override returns (uint8) {
-        return 6;
     }
 
     // 铸币
-    function mint(address _recipient, uint256 _amount) external onlyOwner nonReentrant whenNotPaused {
+    function mint(address _recipient, uint256 _amount) external 
+        onlyAllowedMintRecipients(_recipient) onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) nonReentrant whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
         
@@ -75,7 +85,7 @@ contract PAT is
         }
 
         // 检查总供应量上限
-        require(totalSupply() + _amount <= MAX_SUPPLY, "Exceeds maximum total supply");
+        require(totalSupply() + _amount <= MAX_SUPPLY, SBNGC_PATToken_MintAmountTooLarge(_amount, MAX_SUPPLY));
 
         uint256 maximumMintAmount;
         if (totalSupply() == 0) {
@@ -102,7 +112,7 @@ contract PAT is
 
         require(user!= address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
-        require(_amount <= balanceOf(user), "Insufficient balance");
+        require(_amount <= balanceOf(user), SBNGC_PATToken_InsufficientAllowance(balanceOf(user), _amount));
         
         // 确保用户已授权赎回池
         uint256 currentAllowance = allowance(user, redemptionPool);
@@ -124,6 +134,14 @@ contract PAT is
         emit RedemptionPoolChanged(msg.sender, oldRedemptionPool, _redemptionPool);
     }
 
+    // 重新设置多签钱包地址
+    function setMultiSigWallet(address _multiSigWallet) external onlyAllowedMultiSigWalletCall(multiSigWallet) whenNotPaused {
+        require(_multiSigWallet!= address(0), SBNGC_PATToken_InvalidAddress());
+        address oldMultiSigWallet = multiSigWallet;
+        multiSigWallet = _multiSigWallet;
+        emit MultiSigWalletAdressChanged(msg.sender, oldMultiSigWallet, _multiSigWallet);
+    }
+
     // 重新设置铸币总量上限的分子
     function setMintCapNumerator(uint256 _numerator) external onlyOwner whenNotPaused {
          // 不能超过 20 % 的单次铸造
@@ -140,6 +158,16 @@ contract PAT is
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function setAllowedMintRecipient(address _recipient, bool allowed) external onlyOwner whenNotPaused {
+        require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
+        allowedMintRecipients[_recipient] = allowed;
+        emit AllowedMintRecipientsUpdated(msg.sender, _recipient, allowed);
+    }
+
+    function allowedMintRecipient(address _recipient) external view returns (bool) {
+        return allowedMintRecipients[_recipient]; 
     }
 
      // 添加 UUPS 所需的授权升级函数
