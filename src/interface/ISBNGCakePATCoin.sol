@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-interface ISBNGCakePATCoin {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface ISBNGCakePATCoin is IERC20 {
 
     error SBNGC_PATToken_ImproperlyInitialized();
     error SBNGC_PATToken_MintAmountTooLarge(uint256 amount, uint256 maximumAmount);
