@@ -12,6 +12,8 @@ interface ISBNGCakePATCoin {
     error SBNGC_PATToken_InsufficientAllowance(uint256 allowance, uint256 amount);
     error SBNGC_PATToken_NotAllowedMintRecipientsAddress(address from);
     error SBNGC_PATToken_NotAllowedMintMultiSigWallet(address from);
+    error SBNGC_PATToken_NotBSCChain(uint256 currentChainId);
+
 
     event MintCapNumeratorChanged(address indexed from, uint256 previousMintCapNumerator, uint256 mintCapNumerator);
     event MintPerformed(address indexed recipient, uint256 amount, uint256 newTotalSupply);

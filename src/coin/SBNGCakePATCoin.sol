@@ -33,6 +33,11 @@ contract PAT is
         _disableInitializers();
     }
 
+    modifier onlyBSCChain() {
+        require(block.chainid == 56, SBNGC_PATToken_NotBSCChain(block.chainid));
+        _;
+    }
+
     modifier onlyRedemptionPool() {
         require(msg.sender == redemptionPool, SBNGC_PATToken_BurnNotRedemptionPool(msg.sender));
         _;
@@ -60,6 +65,7 @@ contract PAT is
     function initialize(address _owner, address _redemptionPool, address _multiSigWallet) initializer public {
         require(_owner != address(0), SBNGC_PATToken_ImproperlyInitialized());
         require(_redemptionPool != address(0), SBNGC_PATToken_ImproperlyInitialized());
+        require(_multiSigWallet!= address(0), SBNGC_PATToken_ImproperlyInitialized());
         __ERC20_init(NAME, SYMBOL);
         __ERC20Burnable_init();
         __Ownable_init(_owner);
@@ -75,7 +81,7 @@ contract PAT is
 
     // 铸币
     function mint(address _recipient, uint256 _amount) external 
-        onlyAllowedMintRecipients(_recipient) onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) nonReentrant whenNotPaused {
+        onlyAllowedMintRecipients(_recipient) onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) onlyBSCChain nonReentrant whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
         
@@ -108,7 +114,7 @@ contract PAT is
     }
 
     // 销毁 由赎回池调用
-    function burn(address user, uint256 _amount) external onlyRedemptionPool nonReentrant whenNotPaused {
+    function burn(address user, uint256 _amount) external onlyRedemptionPool onlyBSCChain nonReentrant whenNotPaused {
 
         require(user!= address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
@@ -144,7 +150,7 @@ contract PAT is
 
     // 重新设置铸币总量上限的分子
     function setMintCapNumerator(uint256 _numerator) external onlyOwner whenNotPaused {
-         // 不能超过 20 % 的单次铸造
+         // 不能超过 5 % 的单次铸造
         if (_numerator > MINT_CAP_MAX_NUMERATOR) {
             revert SBNGC_PATToken_MintCapNumeratorTooLarge(_numerator, MINT_CAP_MAX_NUMERATOR);
         }

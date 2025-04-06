@@ -15,6 +15,9 @@ abstract contract SBNGCakePATCoinStorage {
     /// @dev 铸币总量上限的分子的最大值 5% 
     uint256 public constant MINT_CAP_MAX_NUMERATOR = 500;
 
+    // @dev 链ID 56
+    uint256 public constant CHAIN_ID = 11155111;
+
     /// @dev The total supply of SBNG that has been minted.
     uint256 public mintedSupply;
 
