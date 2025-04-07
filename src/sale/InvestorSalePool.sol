@@ -195,7 +195,7 @@ contract InvestorSalePool is
         // 转移USDT到赎回池
         if (treasuryAmount > 0) {
             usdt.approve(address(treasuryPool), treasuryAmount);
-            treasuryPool.depositUSDT(PoolType.INVESTOR, address(this), msg.sender, treasuryAmount, patAmount);
+            treasuryPool.depositUSDT(PoolType.INVESTOR, msg.sender, treasuryAmount, patAmount);
             usdt.approve(address(treasuryPool), 0); // 重置授权
         }
     

@@ -9,7 +9,7 @@ interface ITreasuryPool {
      * @param _usdtAmount USDT金额
      * @param _patAmount PAT金额
      */
-    function depositUSDT(PoolType _poolType, address _pool, address _user, uint256 _usdtAmount, uint256 _patAmount) external;
+    function depositUSDT(PoolType _userType, address _user, uint256 _usdtAmount, uint256 _patAmount) external;
 
     /**
      * @dev 获取用户PAT余额
