@@ -63,6 +63,10 @@ interface IVestingFactory {
     // 获取特定受益人的所有锁仓钱包地址
     function getBeneficiaryVestingWallets(address _beneficiary) external view returns (address[] memory);
 
+    function getVestingStatus(address _vestingWallet) external view returns (uint256, uint256, uint256);
+
+    function releaseVestedTokens(address _vestingWallet) external;
+
     function pause() external;
     function unpause() external;
 

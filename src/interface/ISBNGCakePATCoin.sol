@@ -36,6 +36,7 @@ interface ISBNGCakePATCoin is IERC20 {
 
     function mint(address _recipient, uint256 _amount) external;
     function burn(address user, uint256 _amount) external;
+    // function burnFrom(address user, address poolAddress, uint256 _amount) external;
 
     function pause() external;
     function unpause() external;
