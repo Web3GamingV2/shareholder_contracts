@@ -143,8 +143,7 @@ contract VestingFactory is
         uint64 vestingEnd = vestingStart + poolInfo.vestingDuration;
 
         // 检查锁仓金额是否超过池子限制
-        // TODO 校验这里的时间戳是否合理
-        require(_startTimestamp >= block.timestamp, "Start timestamp must be in the future");
+        require(_startTimestamp >= block.timestamp + 0.5 hours, "Start timestamp must be in the future");
         require(_startTimestamp <= block.timestamp + poolInfo.vestingDuration + poolInfo.cliffDuration, "Start timestamp too far in the future");
 
         address vestingWallet = address(new VestingWallet(
@@ -163,9 +162,14 @@ contract VestingFactory is
             isEarlyRedeemed: false
         });
         
-        // TODO 用户是否有这么多代币
-        // 转移代币到锁仓钱包
-        patToken.safeTransferFrom(msg.sender, vestingWallet, _amount);
+        // // 检查多签账户中是否有足够的代币
+        // uint256 userBalance = patToken.balanceOf(msg.sender);
+        // uint256 userAllowance = patToken.allowance(msg.sender, address(this));
+        // require(userBalance >= _amount, "Insufficient token balance");
+        // require(userAllowance >= _amount, "Insufficient token allowance");
+
+        // // 转移代币到锁仓钱包
+        // patToken.safeTransferFrom(msg.sender, vestingWallet, _amount);
 
         poolVestingWallets[PoolType.INVESTOR].push(vestingWallet);
         beneficiaryVestingWallets[_beneficiary].push(vestingWallet);
@@ -250,7 +254,7 @@ contract VestingFactory is
         
         require(vestingInfos[_vestingWallet].beneficiary != address(0), "Invalid vesting wallet");
         
-        VestingWallet wallet = VestingWallet(_vestingWallet);
+        VestingWallet wallet = VestingWallet(payable(_vestingWallet));
         address tokenAddress = address(patToken);
 
         total = vestingInfos[_vestingWallet].totalAmount;
@@ -312,7 +316,6 @@ contract VestingFactory is
     function unpause() external override onlyMultiSigOrOwner {
         _unpause();
     }
-    
 
     /**
      * @dev 升级合约

@@ -47,8 +47,8 @@ interface IVestingFactory {
     function setPoolConfig(PoolType _poolType, uint64 _cliffDuration, uint64 _vestingDuration, uint256 _initialRelease, bool _canEarlyRedeem) external;
     
     // 为指定受益人创建一个锁仓钱包
-    function createVestingWallet(PoolType _poolType, address _beneficiary, uint256 _amount, uint64 _startTimestamp) external returns (address);
-    function batchCreateVestingWallets(PoolType _poolType, address[] calldata _beneficiaries, uint256[] calldata _amounts, uint64 _startTimestamp) external;
+    function createVestingWallet(address _beneficiary, uint256 _amount, uint64 _startTimestamp) external returns (address);
+    function batchCreateVestingWallets(address[] calldata _beneficiaries, uint256[] calldata _amounts, uint64 _startTimestamp) external;
 
     // 提前赎回锁仓钱包中的代币
     function earlyRedeem(address _vestingWallet) external;
@@ -62,7 +62,7 @@ interface IVestingFactory {
     function getPoolVestingWallets(PoolType _poolType) external view returns (address[] memory);
     // 获取特定受益人的所有锁仓钱包地址
     function getBeneficiaryVestingWallets(address _beneficiary) external view returns (address[] memory);
-    
+
     function pause() external;
     function unpause() external;
 
