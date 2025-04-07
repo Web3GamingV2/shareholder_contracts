@@ -38,23 +38,18 @@ contract PAT is
         _;
     }
 
-    modifier onlyRedemptionPool() {
-        require(msg.sender == redemptionPool, SBNGC_PATToken_BurnNotRedemptionPool(msg.sender));
-        _;
-    }
-
-    modifier onlyAllowedMintRecipients(address _recipient) {
-        require(allowedMintRecipients[_recipient], SBNGC_PATToken_NotAllowedMintRecipientsAddress(_recipient));
+    modifier onlyAllowedRecipients(address _recipient) {
+        require(allowedRecipients[_recipient], SBNGC_PATToken_NotAllowedRecipientsAddress(_recipient));
         _;
     }
 
     modifier onlyAllowedMultiSigWalletAndOwnCall(address _multiSigWallet) {
-        require(msg.sender == _multiSigWallet || msg.sender == owner(), SBNGC_PATToken_NotAllowedMintMultiSigWallet(msg.sender));
+        require(msg.sender == _multiSigWallet || msg.sender == owner(), SBNGC_PATToken_NotAllowedMultiSigWallet(msg.sender));
         _;
     }
 
     modifier onlyAllowedMultiSigWalletCall(address _multiSigWallet) {
-        require(msg.sender == _multiSigWallet, SBNGC_PATToken_NotAllowedMintMultiSigWallet(msg.sender));
+        require(msg.sender == _multiSigWallet, SBNGC_PATToken_NotAllowedMultiSigWallet(msg.sender));
         _;
     }
 
@@ -62,9 +57,8 @@ contract PAT is
         return 6;
     }
 
-    function initialize(address _owner, address _redemptionPool, address _multiSigWallet) initializer public {
+    function initialize(address _owner, address _multiSigWallet) initializer public {
         require(_owner != address(0), SBNGC_PATToken_ImproperlyInitialized());
-        require(_redemptionPool != address(0), SBNGC_PATToken_ImproperlyInitialized());
         require(_multiSigWallet!= address(0), SBNGC_PATToken_ImproperlyInitialized());
         __ERC20_init(NAME, SYMBOL);
         __ERC20Burnable_init();
@@ -73,7 +67,6 @@ contract PAT is
         __ReentrancyGuard_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
-        redemptionPool = _redemptionPool;
         multiSigWallet = _multiSigWallet;
          // 设置默认铸造上限为总供应量的 5%
         mintCapNumerator = MINT_CAP_MAX_NUMERATOR;
@@ -81,7 +74,7 @@ contract PAT is
 
     // 铸币
     function mint(address _recipient, uint256 _amount) external 
-        onlyAllowedMintRecipients(_recipient) onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) onlyBSCChain nonReentrant whenNotPaused {
+        onlyAllowedRecipients(_recipient) onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) onlyBSCChain nonReentrant whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
         
@@ -114,35 +107,20 @@ contract PAT is
     }
 
     // 销毁 由赎回池调用
-    function burn(address user, uint256 _amount) external onlyRedemptionPool onlyBSCChain nonReentrant whenNotPaused {
+    function burn(address addrPool, uint256 _amount) external onlyAllowedRecipients(addrPool) onlyBSCChain nonReentrant whenNotPaused {
 
-        require(user!= address(0), SBNGC_PATToken_InvalidAddress());
+        require(addrPool!= address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
-        require(_amount <= balanceOf(user), SBNGC_PATToken_InsufficientAllowance(balanceOf(user), _amount));
-        
-        // 确保用户已授权赎回池
-        uint256 currentAllowance = allowance(user, redemptionPool);
+        require(_amount <= balanceOf(addrPool), SBNGC_PATToken_InsufficientAllowance(balanceOf(addrPool), _amount));
 
-        if (currentAllowance < _amount) {
-            revert SBNGC_PATToken_InsufficientAllowance(currentAllowance, _amount);
-        }
-
-        _burn(user, _amount);
+        _burn(addrPool, _amount);
         burnedSupply += _amount;
         emit Burn(_amount, totalSupply());
     }
 
-    // 重新设置赎回池地址
-    function setRedemptionPool(address _redemptionPool) external onlyOwner whenNotPaused {
-        require(_redemptionPool!= address(0), SBNGC_PATToken_InvalidAddress());
-        address oldRedemptionPool = redemptionPool;
-        redemptionPool = _redemptionPool;
-        emit RedemptionPoolChanged(msg.sender, oldRedemptionPool, _redemptionPool);
-    }
-
     // 重新设置多签钱包地址
     function setMultiSigWallet(address _multiSigWallet) external onlyAllowedMultiSigWalletCall(multiSigWallet) whenNotPaused {
-        require(_multiSigWallet!= address(0), SBNGC_PATToken_InvalidAddress());
+        require(_multiSigWallet != address(0), SBNGC_PATToken_InvalidAddress());
         address oldMultiSigWallet = multiSigWallet;
         multiSigWallet = _multiSigWallet;
         emit MultiSigWalletAdressChanged(msg.sender, oldMultiSigWallet, _multiSigWallet);
@@ -166,14 +144,14 @@ contract PAT is
         _unpause();
     }
 
-    function setAllowedMintRecipient(address _recipient, bool allowed) external onlyOwner whenNotPaused {
+    function setAllowedRecipient(address _recipient, bool allowed) external onlyOwner whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
-        allowedMintRecipients[_recipient] = allowed;
-        emit AllowedMintRecipientsUpdated(msg.sender, _recipient, allowed);
+        allowedRecipients[_recipient] = allowed;
+        emit AllowedRecipientsUpdated(msg.sender, _recipient, allowed);
     }
 
-    function allowedMintRecipient(address _recipient) external view returns (bool) {
-        return allowedMintRecipients[_recipient]; 
+    function isAllowedRecipient(address _recipient) external view returns (bool) {
+        return allowedRecipients[_recipient]; 
     }
 
      // 添加 UUPS 所需的授权升级函数

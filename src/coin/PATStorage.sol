@@ -24,9 +24,6 @@ abstract contract PATStorage {
     /// @dev The total supply of SBNG that has been burned.
     uint256 public burnedSupply;
 
-    /// @dev 赎回池地址
-    address public redemptionPool;
-
     /// @dev 上一次铸币时间
     uint256 public lastMintTime;    
 
@@ -37,7 +34,7 @@ abstract contract PATStorage {
     address public multiSigWallet;
 
     // @dev 允许的池子地址
-    mapping (address => bool) allowedMintRecipients;
+    mapping (address => bool) allowedRecipients;
 
     /// @dev 低位槽预留
     uint256[100] private __gap;
