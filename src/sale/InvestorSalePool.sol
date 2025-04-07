@@ -14,6 +14,8 @@ import "../interface/IVestingFactory.sol";
 import "../stake/VestingFactoryStorage.sol";
 import "./InvestorSalePoolStorage.sol";
 
+import { PoolType } from "../enum/PoolType.sol";
+
 contract InvestorSalePool is
     Initializable,
     OwnableUpgradeable,
@@ -189,10 +191,11 @@ contract InvestorSalePool is
         usdt.transferFrom(msg.sender, address(this), _usdtAmount);
          // 计算转入赎回池的USDT金额
         uint256 treasuryAmount = (_usdtAmount * treasuryRatioBps) / 10000;
+        
         // 转移USDT到赎回池
         if (treasuryAmount > 0) {
             usdt.approve(address(treasuryPool), treasuryAmount);
-            treasuryPool.depositUSDT(msg.sender, treasuryAmount, patAmount);
+            treasuryPool.depositUSDT(PoolType.INVESTOR, address(this), msg.sender, treasuryAmount, patAmount);
             usdt.approve(address(treasuryPool), 0); // 重置授权
         }
     
@@ -217,7 +220,7 @@ contract InvestorSalePool is
         totalUsdtRaised += _usdtAmount;
         totalPatSold += patAmount;
 
-         emit PurchaseMade(msg.sender, _usdtAmount, patAmount, tier, vestingWallet);
+        emit PurchaseMade(msg.sender, _usdtAmount, patAmount, tier, vestingWallet);
     }
 
     function getUserPurchases(address _user) public view returns (Purchase[] memory) {
