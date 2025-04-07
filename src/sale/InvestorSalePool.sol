@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 
-import "../interface/ISBNGCakePATCoin.sol";
+import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
 import "../stake/VestingFactoryStorage.sol";

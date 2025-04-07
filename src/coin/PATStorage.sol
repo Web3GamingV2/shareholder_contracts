@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-abstract contract SBNGCakePATCoinStorage {
+abstract contract PATStorage {
 
     /// @dev 最小铸造时间间隔
     uint256 public constant MIN_MINT_INTERVAL = 1 days; 

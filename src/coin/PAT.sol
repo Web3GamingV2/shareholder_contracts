@@ -10,8 +10,8 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import "./SBNGCakePATCoinStorage.sol";
-import "../interface/ISBNGCakePATCoin.sol";
+import "./PATStorage.sol";
+import "../interface/IPAT.sol";
 
 contract PAT is 
     Initializable,
@@ -22,8 +22,8 @@ contract PAT is
     ReentrancyGuardUpgradeable,
     PausableUpgradeable,
     UUPSUpgradeable,
-    SBNGCakePATCoinStorage,
-    ISBNGCakePATCoin {
+    PATStorage,
+    IPATInterface {
 
     string private constant NAME = "SBNGPATCoin";
     string private constant SYMBOL = "PAT";

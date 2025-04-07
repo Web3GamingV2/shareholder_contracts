@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
 
-import "../interface/ISBNGCakePATCoin.sol";
+import "../interface/IPAT.sol";
 import "../interface/IRedemptionPool.sol";
 import "./VestingFactoryStorage.sol";
 
@@ -21,7 +21,7 @@ contract VestingFactory is
     PausableUpgradeable,
     VestingFactoryStorage
 {
-    using SafeERC20 for ISBNGCakePATCoin;
+    using SafeERC20 for IPATInterface;
 
      // 修饰符：仅限多签钱包或所有者
     modifier onlyMultiSigOrOwner() {
@@ -37,18 +37,15 @@ contract VestingFactory is
     /**
      * @dev 初始化函数
      * @param _patToken PAT代币合约地址
-     * @param _redemptionPool 赎回池地址
      * @param _multiSigWallet 多签钱包地址
      * @param _earlyRedemptionFeeBps 提前赎回费率（基点）
      */
     function initialize(
         address _patToken,
-        address _redemptionPool,
         address _multiSigWallet,
         uint256 _earlyRedemptionFeeBps
     ) initializer public {
         require(_patToken != address(0), "Invalid PAT token address");
-        require(_redemptionPool != address(0), "Invalid redemption pool address");
         require(_multiSigWallet != address(0), "Invalid multisig wallet address");
         require(_earlyRedemptionFeeBps <= 10000, "Fee cannot exceed 100%");
         
@@ -57,19 +54,15 @@ contract VestingFactory is
         __Pausable_init();
         __UUPSUpgradeable_init();
         
-        patToken = ISBNGCakePATCoin(_patToken);
-        redemptionPool = IRedemptionPool(_redemptionPool);
-        multiSigWallet = _multiSigWallet;
-        earlyRedemptionFeeBps = _earlyRedemptionFeeBps;
-        version = 1;
+       __VestingFactoryStorage_init(_patToken, _multiSigWallet, _earlyRedemptionFeeBps);
         
         // 一期只设置投资人池配置
         _setPoolConfig(PoolType.INVESTOR, 0, 365 days, 0, true, true);  // 投资人池：无悬崖期，1年线性释放，无初始释放，可提前赎回
         
         // 其他池子配置预留，但设置为非激活状态
-        _setPoolConfig(PoolType.TEAM, 180 days, 730 days, 0, false, false);
-        _setPoolConfig(PoolType.COMMUNITY, 0, 365 days, 1000, true, false);
-        _setPoolConfig(PoolType.ADVISOR, 90 days, 365 days, 0, false, false);
+        _setPoolConfig(PoolType.DIRECT, 180 days, 730 days, 0, false, false);
+        _setPoolConfig(PoolType.LIQUIDITY, 0, 365 days, 1000, true, false);
+        _setPoolConfig(PoolType.FOUNDATION, 90 days, 365 days, 0, false, false);
         _setPoolConfig(PoolType.RESERVE, 0, 730 days, 0, false, false);
     }
     
@@ -168,7 +161,7 @@ contract VestingFactory is
         // require(userBalance >= _amount, "Insufficient token balance");
         // require(userAllowance >= _amount, "Insufficient token allowance");
 
-        // // 转移代币到锁仓钱包
+        // 转移代币到锁仓钱包
         // patToken.safeTransferFrom(msg.sender, vestingWallet, _amount);
 
         poolVestingWallets[PoolType.INVESTOR].push(vestingWallet);
@@ -231,13 +224,13 @@ contract VestingFactory is
         
         // TODO 用一个代理合约来处理 或者 自定义的VestingWallet实现 why?
 
-        // 转账赎回金额给受益人
-        patToken.safeTransferFrom(_vestingWallet, msg.sender, redemptionAmount);
+        // // 转账赎回金额给受益人
+        // patToken.safeTransferFrom(_vestingWallet, msg.sender, redemptionAmount);
 
-         // 转账费用给赎回池
-        if (fee > 0) {
-            patToken.safeTransferFrom(_vestingWallet, address(redemptionPool), fee);
-        }
+        //  // 转账费用给赎回池
+        // if (fee > 0) {
+        //     patToken.safeTransferFrom(_vestingWallet, address(redemptionPool), fee);
+        // }
 
         emit EarlyRedemptionPerformed(_vestingWallet, msg.sender, redemptionAmount, fee);
     }
@@ -265,15 +258,7 @@ contract VestingFactory is
         
     }
 
-     /**
-     * @dev 设置赎回池地址
-     * @param _redemptionPool 新的赎回池地址
-     */
-    function setRedemptionPool(address _redemptionPool) public override onlyMultiSigOrOwner whenNotPaused {
-        require(_redemptionPool != address(0), "Invalid redemption pool address");
-        address oldPool = address(redemptionPool);
-        redemptionPool = IRedemptionPool(_redemptionPool);
-        emit RedemptionPoolUpdated(oldPool, _redemptionPool);
+    function releaseVestedTokens(address _vestingWallet) external onlyMultiSigOrOwner {
     }
     
     /**

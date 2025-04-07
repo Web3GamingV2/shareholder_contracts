@@ -10,10 +10,10 @@ interface IVestingFactory {
     /// @dev 锁仓池类型
     enum PoolType {
         INVESTOR,    // 投资人池 
-        TEAM,        // 团队池
-        COMMUNITY,   // 社区池
-        ADVISOR,     // 顾问池
-        RESERVE      // 储备池
+        DIRECT,      // 直售池
+        RESERVE,     // 储备池
+        LIQUIDITY,   // 流动性池
+        FOUNDATION   // 基金会池
     }
 
     /// @dev 锁仓池信息
@@ -54,9 +54,6 @@ interface IVestingFactory {
     function earlyRedeem(address _vestingWallet) external;
     // 设置提前赎回的费率 (单位：基点，10000=100%)
     function setEarlyRedemptionFee(uint256 _earlyRedemptionFeeBps) external;
-
-    // 设置赎回池合约地址
-    function setRedemptionPool(address _redemptionPool) external;
 
     // 获取特定池子类型的所有锁仓钱包地址
     function getPoolVestingWallets(PoolType _poolType) external view returns (address[] memory);

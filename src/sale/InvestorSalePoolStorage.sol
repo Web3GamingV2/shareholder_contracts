@@ -4,19 +4,19 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-import "../interface/ISBNGCakePATCoin.sol";
+import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
 
 abstract contract InvestorSalePoolStorage is Initializable {
 
     using SafeERC20 for IERC20;
-    using SafeERC20 for ISBNGCakePATCoin;
+    using SafeERC20 for IPATInterface;
 
     uint256 public constant usdtDecimal = 10 ** 6;
     uint256 public constant patDecimal = 10 ** 6;
 
-    ISBNGCakePATCoin public patCoin;  // PAT代币
+    IPATInterface public patCoin;  // PAT代币
     IERC20 public usdt;               // USDT代币
     ITreasuryPool public treasuryPool; // 资金池
     IVestingFactory public vestingFactory; // 锁仓工厂合约
@@ -93,7 +93,7 @@ abstract contract InvestorSalePoolStorage is Initializable {
         uint64 _vestingStartTime,
         address _multiSigWallet
     ) internal initializer {
-        patCoin = ISBNGCakePATCoin(_patCoin);
+        patCoin = IPATInterface(_patCoin);
         usdt = IERC20(_usdt);
         treasuryPool = ITreasuryPool(_treasuryPool);
         vestingFactory = IVestingFactory(_vestingFactory);
@@ -103,4 +103,7 @@ abstract contract InvestorSalePoolStorage is Initializable {
         multiSigWallet = _multiSigWallet;
         saleActive = false;
     }
+
+     // 保留的存储槽位，用于未来扩展
+    uint256[50] private __gap;
 }
