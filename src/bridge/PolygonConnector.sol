@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { OAppUpgradeable } from "./OAppUpgradeable.sol";
+import { OAppUpgradeable } from "../layer-zero/OAppUpgradeable.sol";
 
 /// @title PolygonConnector
 /// @notice 使用 OAppUpgradeable 实现的 LayerZero 跨链通信合约（部署在 Polygon 上）

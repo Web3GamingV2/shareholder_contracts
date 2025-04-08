@@ -67,9 +67,7 @@ contract PAT is
         __ReentrancyGuard_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
-        multiSigWallet = _multiSigWallet;
-         // 设置默认铸造上限为总供应量的 5%
-        mintCapNumerator = MINT_CAP_MAX_NUMERATOR;
+        __PATStorage_init(_multiSigWallet);
     }
 
     // 铸币

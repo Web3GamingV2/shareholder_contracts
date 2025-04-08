@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-abstract contract PATStorage {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+abstract contract PATStorage is Initializable {
 
     /// @dev 最小铸造时间间隔
     uint256 public constant MIN_MINT_INTERVAL = 1 days; 
@@ -35,6 +37,14 @@ abstract contract PATStorage {
 
     // @dev 允许的池子地址
     mapping (address => bool) allowedRecipients;
+
+    function __PATStorage_init(address _multiSigWallet) internal initializer {
+        // 初始化铸币总量上限的分子
+        mintCapNumerator = MINT_CAP_MAX_NUMERATOR;
+        // 初始化上一次铸币时间
+        lastMintTime = block.timestamp;
+        multiSigWallet = _multiSigWallet;
+    }
 
     /// @dev 低位槽预留
     uint256[100] private __gap;
