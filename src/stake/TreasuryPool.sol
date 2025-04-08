@@ -94,6 +94,7 @@ contract TreasuryPool is
         }
         
         // 创建新的存款记录
+        // TODO 这个地方意义不大 考虑离链处理 记录必要信息即可
         Deposit memory newDeposit = Deposit({
             usdtAmount: _usdtAmount,
             patAmount: _patAmount,
