@@ -4,7 +4,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interface/IPAT.sol";
-import "../interface/IVestingFactory.sol";
 import "../interface/IPolygonConnector.sol";
 import "../interface/ITreasuryPool.sol";
 
@@ -40,7 +39,6 @@ abstract contract TreasuryPoolStorage is Initializable {
     // 状态变量
     IPATInterface public patCoin;  // PAT代币
     IERC20 public usdtCoin;        // USDT代币
-    IVestingFactory public vestingFactory; // 锁仓工厂
     IPolygonConnector public polygonConnector; // Polygon跨链连接器
     address public multiSigWallet; // 多签钱包地址
 
@@ -118,6 +116,7 @@ abstract contract TreasuryPoolStorage is Initializable {
         uint256 timestamp
     );
 
+
     /**
      * @dev 初始化存储合约
      */
@@ -135,7 +134,6 @@ abstract contract TreasuryPoolStorage is Initializable {
         
         patCoin = IPATInterface(_patToken);
         usdtCoin = IERC20(_usdtToken);
-        vestingFactory = IVestingFactory(_vestingFactory);
         polygonConnector = IPolygonConnector(_polygonConnector);
         multiSigWallet = _multiSigWallet;
     }
