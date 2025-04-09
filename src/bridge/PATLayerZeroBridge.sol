@@ -3,10 +3,10 @@ pragma solidity ^0.8.13;
 
 import { OAppUpgradeable } from "./OAppUpgradeable.sol";
 
-/// @title PolygonConnector
+/// @title PATLayerZeroBridge
 /// @notice 使用 OAppUpgradeable 实现的 LayerZero 跨链通信合约（部署在 Polygon 上）
 /// @dev 支持 UUPS 升级、设置 peer、发送和接收消息
-contract PolygonConnector is OAppUpgradeable {
+contract PATLayerZeroBridge is OAppUpgradeable {
     event MessageReceived(uint32 indexed srcEid, bytes32 indexed sender, string message);
     event MessageSent(uint32 indexed dstEid, bytes32 indexed receiver, string message);
 

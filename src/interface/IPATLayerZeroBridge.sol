@@ -2,10 +2,10 @@
 pragma solidity ^0.8.13;
 
 /**
- * @title IPolygonConnector
+ * @title IPATLayerZeroBridge
  * @dev Polygon跨链连接器接口
  */
-interface IPolygonConnector {
+interface IPATLayerZeroBridge {
     /**
      * @dev 将代币桥接到L2
      * @param _token 代币地址

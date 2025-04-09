@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interface/IPAT.sol";
-import "../interface/IPolygonConnector.sol";
+import "../interface/IPATLayerZeroBridge.sol";
 import "../interface/ITreasuryPool.sol";
 
 import { PoolType } from "../enum/PoolType.sol";
@@ -39,7 +39,7 @@ abstract contract TreasuryPoolStorage is Initializable {
     // 状态变量
     IPATInterface public patCoin;  // PAT代币
     IERC20 public usdtCoin;        // USDT代币
-    IPolygonConnector public polygonConnector; // Polygon跨链连接器
+    IPATLayerZeroBridge public polygonConnector; // Polygon跨链连接器
     address public multiSigWallet; // 多签钱包地址
 
     // 用户余额映射 (用户地址 => 余额信息)
@@ -134,7 +134,7 @@ abstract contract TreasuryPoolStorage is Initializable {
         
         patCoin = IPATInterface(_patToken);
         usdtCoin = IERC20(_usdtToken);
-        polygonConnector = IPolygonConnector(_polygonConnector);
+        polygonConnector = IPATLayerZeroBridge(_polygonConnector);
         multiSigWallet = _multiSigWallet;
     }
 

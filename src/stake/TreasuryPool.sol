@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
-import "../interface/IPolygonConnector.sol";
+import "../interface/IPATLayerZeroBridge.sol";
 import "./TreasuryPoolStorage.sol";
 
 /**
@@ -323,7 +323,7 @@ contract TreasuryPool is
         require(_newConnector != address(0), "Invalid connector address");
         
         address oldConnector = address(polygonConnector);
-        polygonConnector = IPolygonConnector(_newConnector);
+        polygonConnector = IPATLayerZeroBridge(_newConnector);
         
         emit PolygonConnectorUpdated(oldConnector, _newConnector);
     }
