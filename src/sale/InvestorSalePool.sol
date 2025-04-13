@@ -7,14 +7,13 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-
+import "../core/PATStorage.sol";
 import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
 import "../stake/VestingFactoryStorage.sol";
 import "./InvestorSalePoolStorage.sol";
 
-import { PoolType } from "../enum/PoolType.sol";
 
 contract InvestorSalePool is
     Initializable,
@@ -195,7 +194,7 @@ contract InvestorSalePool is
         // 转移USDT到赎回池
         if (treasuryAmount > 0) {
             usdt.approve(address(treasuryPool), treasuryAmount);
-            treasuryPool.depositUSDT(PoolType.INVESTOR, msg.sender, treasuryAmount, patAmount);
+            treasuryPool.depositUSDT(PATStorage.PoolType.INVESTOR, msg.sender, treasuryAmount, patAmount);
             usdt.approve(address(treasuryPool), 0); // 重置授权
         }
     

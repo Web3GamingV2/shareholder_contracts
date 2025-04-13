@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { PoolType } from "../enum/PoolType.sol";
+import "../core/PATStorage.sol";
 
 /**
  * @title IVestingFactory
@@ -19,7 +19,7 @@ interface IVestingFactory {
     }
 
     struct VestingInfo {
-        PoolType poolType;       // 池子类型
+        PATStorage.PoolType poolType;       // 池子类型
         address beneficiary;  // 受益人地址
         uint64 startTime;     // 开始时间
         uint64 endTime;       // 结束时间
@@ -28,8 +28,8 @@ interface IVestingFactory {
     }
 
     // 事件
-    event PoolConfigUpdated(PoolType indexed poolType, uint64 cliffDuration, uint64 vestingDuration, uint256 initialRelease, bool canEarlyRedeem);
-    event VestingWalletCreated(PoolType indexed poolType, address indexed vestingWallet, address indexed beneficiary, uint256 amount);
+    event PoolConfigUpdated(PATStorage.PoolType indexed poolType, uint64 cliffDuration, uint64 vestingDuration, uint256 initialRelease, bool canEarlyRedeem);
+    event VestingWalletCreated(PATStorage.PoolType indexed poolType, address indexed vestingWallet, address indexed beneficiary, uint256 amount);
     event EarlyRedemptionPerformed(address indexed vestingWallet, address indexed beneficiary, uint256 redeemedAmount, uint256 feeAmount);
     event RedemptionPoolUpdated(address oldPool, address newPool);
     event EarlyRedemptionFeeUpdated(uint256 oldFee, uint256 newFee);
@@ -37,7 +37,7 @@ interface IVestingFactory {
     // 函数
 
     // 设置特定类型锁仓池的配置参数
-    function setPoolConfig(PoolType _poolType, uint64 _cliffDuration, uint64 _vestingDuration, uint256 _initialRelease, bool _canEarlyRedeem) external;
+    function setPoolConfig(PATStorage.PoolType _poolType, uint64 _cliffDuration, uint64 _vestingDuration, uint256 _initialRelease, bool _canEarlyRedeem) external;
     
     // 为指定受益人创建一个锁仓钱包
     function createVestingWallet(address _beneficiary, uint256 _amount, uint64 _startTimestamp) external returns (address);
@@ -49,7 +49,7 @@ interface IVestingFactory {
     function setEarlyRedemptionFee(uint256 _earlyRedemptionFeeBps) external;
 
     // 获取特定池子类型的所有锁仓钱包地址
-    function getPoolVestingWallets(PoolType _poolType) external view returns (address[] memory);
+    function getPoolVestingWallets(PATStorage.PoolType _poolType) external view returns (address[] memory);
     // 获取特定受益人的所有锁仓钱包地址
     function getBeneficiaryVestingWallets(address _beneficiary) external view returns (address[] memory);
 

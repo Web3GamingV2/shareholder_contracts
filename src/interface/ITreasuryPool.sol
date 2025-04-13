@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-import { PoolType } from "../enum/PoolType.sol";
+import "../core/PATStorage.sol";
 
 interface ITreasuryPool {
     /**
@@ -9,7 +9,7 @@ interface ITreasuryPool {
      * @param _usdtAmount USDT金额
      * @param _patAmount PAT金额
      */
-    function depositUSDT(PoolType _userType, address _user, uint256 _usdtAmount, uint256 _patAmount) external;
+    function depositUSDT(PATStorage.PoolType _userType, address _user, uint256 _usdtAmount, uint256 _patAmount) external;
 
     /**
      * @dev 获取用户PAT余额
@@ -61,7 +61,7 @@ interface ITreasuryPool {
      * @param _userType 用户类型
      * @param _isAuthorized 是否授权
      */
-    function authorizePool(address _pool, PoolType _userType, bool _isAuthorized) external;
+    function authorizePool(address _pool, PATStorage.PoolType _userType, bool _isAuthorized) external;
     
     /**
      * @dev 更新Polygon连接器
@@ -111,7 +111,7 @@ interface ITreasuryPool {
         uint256 usdtAmount,
         uint256 timestamp,
         address sourcePool,
-        PoolType userType
+        PATStorage.PoolType userType
     );
     
     /**
@@ -119,14 +119,14 @@ interface ITreasuryPool {
      * @param _userType 用户类型
      * @return 总PAT余额
      */
-    function getTotalPatBalance(PoolType _userType) external view returns (uint256);
+    function getTotalPatBalance(PATStorage.PoolType _userType) external view returns (uint256);
     
     /**
      * @dev 获取特定类型的总利息
      * @param _userType 用户类型
      * @return 总利息
      */
-    function getTotalInterest(PoolType _userType) external view returns (uint256);
+    function getTotalInterest(PATStorage.PoolType _userType) external view returns (uint256);
     
     /**
      * @dev 暂停合约

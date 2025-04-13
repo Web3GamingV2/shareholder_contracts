@@ -6,8 +6,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IPAT.sol";
 import "../interface/IPATLayerZeroBridge.sol";
 import "../interface/ITreasuryPool.sol";
+import "../core/PATStorage.sol";
 
-import { PoolType } from "../enum/PoolType.sol";
 
 abstract contract TreasuryPoolStorage is Initializable {
 
@@ -20,7 +20,7 @@ abstract contract TreasuryPoolStorage is Initializable {
         uint256 usdtAmount;    // USDT金额
         uint256 timestamp;     // 存款时间
         address sourcePool;    // 来源池合约地址
-        PoolType userType;     // 用户类型
+        PATStorage.PoolType userType;     // 用户类型
     }
 
     // 用户余额结构体
@@ -49,11 +49,11 @@ abstract contract TreasuryPoolStorage is Initializable {
     mapping(address => bool) public authorizedPools;
     
     // 池类型映射 (池地址 => 用户类型)
-    mapping(address => PoolType) public poolTypes;
+    mapping(address => PATStorage.PoolType) public poolTypes;
     
     // 总余额（按合约池类型）
-    mapping(PoolType => uint256) public totalPatBalances;  // 总PAT余额
-    mapping(PoolType => uint256) public totalInterests;    // 总利息
+    mapping(PATStorage.PoolType => uint256) public totalPatBalances;  // 总PAT余额
+    mapping(PATStorage.PoolType => uint256) public totalInterests;    // 总利息
 
     uint256 public totalUsdtBalance; // 总USDT余额
 
@@ -63,14 +63,14 @@ abstract contract TreasuryPoolStorage is Initializable {
     // 事件
     event PoolAuthorized(
         address indexed poolAddress,
-        PoolType indexed poolType,
+        PATStorage.PoolType indexed poolType,
         bool isAuthorized
     );
     
     event USDTDeposited(
         address indexed user,
         address indexed sourcePool,
-        PoolType indexed userType,
+        PATStorage.PoolType indexed userType,
         uint256 usdtAmount,
         uint256 patAmount,
         uint256 depositIndex
@@ -79,7 +79,7 @@ abstract contract TreasuryPoolStorage is Initializable {
     event PATRedeemed(
         address indexed user,
         address indexed sourcePool,
-        PoolType indexed userType,
+        PATStorage.PoolType indexed userType,
         uint256 patAmount,
         uint256 usdtAmount,
         uint256 interestAmount

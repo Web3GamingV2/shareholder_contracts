@@ -4,6 +4,13 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 abstract contract PATStorage is Initializable {
+    
+    enum PoolType {
+        INVESTOR,    // 投资人池 
+        DIRECT,      // 直售池
+        RESERVE,     // 储备池
+        FOUNDATION   // 基金会池
+    }
 
     /// @dev 最小铸造时间间隔
     uint256 public constant MIN_MINT_INTERVAL = 1 days; 
