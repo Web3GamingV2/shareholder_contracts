@@ -11,7 +11,7 @@ interface IPATLayerZeroBridge {
      * @param _token 代币地址
      * @param _amount 金额
      */
-    function bridgeTokensToL2(address _token, uint256 _amount) external;
+    function bridgeTokensToL2(address _proxyAddr, address _token, uint256 _amount) external;
     
     /**
      * @dev 从L2接收代币

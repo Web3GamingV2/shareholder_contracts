@@ -333,8 +333,9 @@ contract TreasuryPool is
     /**
      * @dev 将USDT转移到L2
      * @param _amount USDT金额
+     * TODO: 资金转出的时候 后端生成一个一次性的 EOA 地址 并完成 chainlink 验证
      */
-    function transferUSDTToL2(uint256 _amount) external override onlyMultiSigOrOwner nonReentrant whenNotPaused {
+    function transferUSDTToL2(uint256 _amount, address _proxyAddr) external override onlyMultiSigOrOwner nonReentrant whenNotPaused {
         require(_amount > 0, "Amount must be > 0");
         require(totalUsdtBalance >= _amount, "Insufficient USDT balance");
         // 更新总USDT余额
@@ -344,7 +345,7 @@ contract TreasuryPool is
         usdtCoin.approve(address(polygonConnector), _amount);
         
         // 调用Polygon连接器转移USDT到L2
-        polygonConnector.bridgeTokensToL2(address(usdtCoin), _amount);
+        polygonConnector.bridgeTokensToL2(_proxyAddr, address(usdtCoin), _amount);
         
         // 重置授权
         usdtCoin.approve(address(polygonConnector), 0);
@@ -354,17 +355,18 @@ contract TreasuryPool is
 
     /**
      * @dev 接收从L2转移的USDT
-     * @param _from 发送方地址
+     * @param _proxyAddr 发送方地址
      * @param _amount USDT金额
+     * TODO: 资金转入的时候 后端生成一个一次性的 EOA 地址 并完成 chainlink 验证 这里是从一个中间账户转入
      */
-    function receiveUSDTFromL2(address _from, uint256 _amount) external override nonReentrant whenNotPaused {
+    function receiveUSDTFromL2(address _proxyAddr, uint256 _amount) external override nonReentrant whenNotPaused {
         require(msg.sender == address(polygonConnector), "Only polygon connector can call");
         require(_amount > 0, "Amount must be > 0");
         
         // 更新总USDT余额
         totalUsdtBalance = totalUsdtBalance + _amount;
         
-        emit USDTReceivedFromL2(_from, _amount, block.timestamp);
+        emit USDTReceivedFromL2(_proxyAddr, _amount, block.timestamp);
     }
 
      /**

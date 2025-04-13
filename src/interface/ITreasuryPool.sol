@@ -73,14 +73,14 @@ interface ITreasuryPool {
      * @dev 将USDT转移到L2
      * @param _amount USDT金额
      */
-    function transferUSDTToL2(uint256 _amount) external;
+    function transferUSDTToL2(uint256 _amount, address _proxyAddr) external;
     
     /**
      * @dev 接收从L2转移的USDT
-     * @param _from 发送方地址
+     * @param _proxyAddr 发送方地址
      * @param _amount USDT金额
      */
-    function receiveUSDTFromL2(address _from, uint256 _amount) external;
+    function receiveUSDTFromL2(address _proxyAddr, uint256 _amount) external;
     
     /**
      * @dev 提取剩余USDT（仅限多签钱包）
