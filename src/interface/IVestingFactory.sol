@@ -33,6 +33,7 @@ interface IVestingFactory {
     event EarlyRedemptionPerformed(address indexed vestingWallet, address indexed beneficiary, uint256 redeemedAmount, uint256 feeAmount);
     event RedemptionPoolUpdated(address oldPool, address newPool);
     event EarlyRedemptionFeeUpdated(uint256 oldFee, uint256 newFee);
+    event TokensReleased(address indexed vestingWallet, address indexed beneficiary, uint256 amount);
 
     // 函数
 

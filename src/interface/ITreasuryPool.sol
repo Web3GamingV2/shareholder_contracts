@@ -56,33 +56,6 @@ interface ITreasuryPool {
     function redeemPAT(address _user, uint256 _patAmount, uint256 _usdtAmount) external returns (uint256);
     
     /**
-     * @dev 授权子合约池
-     * @param _pool 池地址
-     * @param _userType 用户类型
-     * @param _isAuthorized 是否授权
-     */
-    function authorizePool(address _pool, PATStorage.PoolType _userType, bool _isAuthorized) external;
-    
-    /**
-     * @dev 更新Polygon连接器
-     * @param _newConnector 新连接器地址
-     */
-    function updatePolygonConnector(address _newConnector) external;
-    
-    /**
-     * @dev 将USDT转移到L2
-     * @param _amount USDT金额
-     */
-    function transferUSDTToL2(uint256 _amount, address _proxyAddr) external;
-    
-    /**
-     * @dev 接收从L2转移的USDT
-     * @param _proxyAddr 发送方地址
-     * @param _amount USDT金额
-     */
-    function receiveUSDTFromL2(address _proxyAddr, uint256 _amount) external;
-    
-    /**
      * @dev 提取剩余USDT（仅限多签钱包）
      * @param _to 接收地址
      * @param _amount USDT金额

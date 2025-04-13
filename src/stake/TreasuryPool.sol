@@ -37,11 +37,6 @@ contract TreasuryPool is
         _;
     }
     
-    modifier onlyAuthorizedPool() {
-        require(authorizedPools[msg.sender], "Not authorized pool");
-        _;
-    }
-    
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -52,8 +47,7 @@ contract TreasuryPool is
         address _patToken,
         address _usdtToken,
         address _multiSigWallet,
-        address _vestingFactory,
-        address _polygonConnector
+        address _vestingFactory
     ) public initializer {
         __Ownable_init(_owner);
         __ReentrancyGuard_init();
@@ -63,13 +57,12 @@ contract TreasuryPool is
             _patToken,
             _usdtToken,
             _vestingFactory,
-            _polygonConnector,
             _multiSigWallet
         );
     }
 
     /**
-     * @dev 存入USDT 子合约池调用
+     * @dev 存入 USDT 子合约池调用
      * @param _user 用户地址
      * @param _usdtAmount USDT金额
      * @param _patAmount PAT金额 
@@ -79,7 +72,7 @@ contract TreasuryPool is
         address _user,
         uint256 _usdtAmount,
         uint256 _patAmount
-    ) external override whenNotPaused nonReentrant onlyAuthorizedPool {
+    ) external override whenNotPaused nonReentrant {
         require(_user != address(0), "Invalid user address");
         require(_usdtAmount > 0, "Invalid USDT amount");
         require(_patAmount > 0, "Invalid PAT amount");
@@ -96,7 +89,6 @@ contract TreasuryPool is
         }
         
         // 创建新的存款记录
-        // TODO 这个地方意义不大 考虑离链处理 记录必要信息即可
         Deposit memory newDeposit = Deposit({
             usdtAmount: _usdtAmount,
             patAmount: _patAmount,
@@ -172,10 +164,10 @@ contract TreasuryPool is
             return 0; // 没有存款记录，不更新利息
         }
 
-         // 更新上次计息时间
+        // 更新上次计息时间
         userBalances[_user].lastInterestTime = block.timestamp;
 
-         // 更新用户利息
+        // 更新用户利息
         userBalances[_user].interest = userBalances[_user].interest + interestAmount;
         // 更新总利息
         totalInterests[userType] = totalInterests[userType] + interestAmount;
@@ -234,7 +226,10 @@ contract TreasuryPool is
      * TODO 要考虑用户从哪个合约池赎回哪一笔充值
      * TODO 前置合约调用要区分锁仓合约信息
      */
-    function redeemPAT (address _user, uint256 _patAmount, uint256 _usdtAmount) public override nonReentrant whenNotPaused returns (uint256) {
+    function redeemPAT (
+        address _user, 
+        uint256 _patAmount, 
+        uint256 _usdtAmount) public override nonReentrant whenNotPaused returns (uint256) {
         require(_user != address(0), "Invalid user address");
         require(_patAmount > 0, "PAT amount must be > 0");
         require(_usdtAmount > 0, "USDT amount must be > 0");
@@ -259,7 +254,7 @@ contract TreasuryPool is
         
         require(isValidSource, "Not the source pool");
 
-         // 先更新利息
+        // 先更新利息
         updateInterest(_user);
         
          // 计算可赎回的利息比例
@@ -279,8 +274,6 @@ contract TreasuryPool is
         // 更新总USDT余额
         totalUsdtBalance = totalUsdtBalance - _usdtAmount;
 
-         // 转移USDT给调用合约
-        usdtCoin.safeTransfer(msg.sender, _usdtAmount);
         // 触发事件
          emit PATRedeemed(
             _user,
@@ -294,79 +287,13 @@ contract TreasuryPool is
         return _usdtAmount;
         
     }
-    
-    /**
-     * @dev 授权子合约池
-     * @param _pool 池地址
-     * @param _userType 用户类型
-     * @param _isAuthorized 是否授权
-     */
-    function authorizePool(
-        address _pool,
-        PATStorage.PoolType _userType,
-        bool _isAuthorized
-    ) external override onlyMultiSigOrOwner {
-        require(_pool != address(0), "Invalid pool address");
-        
-        authorizedPools[_pool] = _isAuthorized;
-        
-        if (_isAuthorized) {
-            poolTypes[_pool] = _userType;
-        }
-        
-        emit PoolAuthorized(_pool, _userType, _isAuthorized);
-    }
-    
-    /**
-     * @dev 更新Polygon连接器
-     * @param _newConnector 新连接器地址
-     */
-    function updatePolygonConnector(address _newConnector) external override onlyMultiSigOrOwner {
-        require(_newConnector != address(0), "Invalid connector address");
-        
-        address oldConnector = address(polygonConnector);
-        polygonConnector = IPATLayerZeroBridge(_newConnector);
-        
-        emit PolygonConnectorUpdated(oldConnector, _newConnector);
-    }
 
-    /**
-     * @dev 将USDT转移到L2
-     * @param _amount USDT金额
-     * TODO: 资金转出的时候 后端生成一个一次性的 EOA 地址 并完成 chainlink 验证
-     */
-    function transferUSDTToL2(uint256 _amount, address _proxyAddr) external override onlyMultiSigOrOwner nonReentrant whenNotPaused {
-        require(_amount > 0, "Amount must be > 0");
-        require(totalUsdtBalance >= _amount, "Insufficient USDT balance");
-        // 更新总USDT余额
-        totalUsdtBalance = totalUsdtBalance - _amount;
-        
-        // 授权Polygon连接器使用USDT
-        usdtCoin.approve(address(polygonConnector), _amount);
-        
-        // 调用Polygon连接器转移USDT到L2
-        polygonConnector.bridgeTokensToL2(_proxyAddr, address(usdtCoin), _amount);
-        
-        // 重置授权
-        usdtCoin.approve(address(polygonConnector), 0);
-        
-        emit USDTTransferredToL2(msg.sender, _amount, block.timestamp);
-    }
-
-    /**
-     * @dev 接收从L2转移的USDT
-     * @param _proxyAddr 发送方地址
-     * @param _amount USDT金额
-     * TODO: 资金转入的时候 后端生成一个一次性的 EOA 地址 并完成 chainlink 验证 这里是从一个中间账户转入
-     */
-    function receiveUSDTFromL2(address _proxyAddr, uint256 _amount) external override nonReentrant whenNotPaused {
-        require(msg.sender == address(polygonConnector), "Only polygon connector can call");
-        require(_amount > 0, "Amount must be > 0");
-        
-        // 更新总USDT余额
-        totalUsdtBalance = totalUsdtBalance + _amount;
-        
-        emit USDTReceivedFromL2(_proxyAddr, _amount, block.timestamp);
+    // 锁定用户赎回金额（仅允许管理员调用）
+    function lockBalanceWaitTron(address user, uint256 amount) external onlyOwner {
+        require(redeemableBalances[user] >= amount, "Insufficient redeemable balance");
+        redeemableBalances[user] -= amount;
+        lockedBalancesTron[user] += amount;
+        emit BalanceLocked(user, amount);
     }
 
      /**
@@ -380,6 +307,7 @@ contract TreasuryPool is
         require(totalUsdtBalance >= _amount, "Insufficient balance");
         
         totalUsdtBalance = totalUsdtBalance - _amount;
+        // 从当前合约中提取USDT
         usdtCoin.safeTransfer(_to, _amount);
         
         emit USDTWithdrawn(_to, _amount, msg.sender, block.timestamp);

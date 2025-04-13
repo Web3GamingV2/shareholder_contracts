@@ -138,14 +138,15 @@ contract VestingFactory is
         require(_startTimestamp >= block.timestamp + 0.5 hours, "Start timestamp must be in the future");
         require(_startTimestamp <= block.timestamp + poolInfo.vestingDuration + poolInfo.cliffDuration, "Start timestamp too far in the future");
 
-        address vestingWallet = address(new VestingWallet(
+        VestingWallet vestingWallet = new VestingWallet(
             _beneficiary,
             vestingStart,
             poolInfo.vestingDuration
-        ));
+        );
+        address vestingWalletAddr = address(vestingWallet);
 
         // 记录锁仓信息
-        vestingInfos[vestingWallet] = VestingInfo({
+        vestingInfos[vestingWalletAddr] = VestingInfo({
             poolType: PATStorage.PoolType.INVESTOR,
             beneficiary: _beneficiary,
             startTime: vestingStart,
@@ -154,21 +155,21 @@ contract VestingFactory is
             isEarlyRedeemed: false
         });
         
-        // // 检查多签账户中是否有足够的代币
-        // uint256 userBalance = patToken.balanceOf(msg.sender);
-        // uint256 userAllowance = patToken.allowance(msg.sender, address(this));
-        // require(userBalance >= _amount, "Insufficient token balance");
-        // require(userAllowance >= _amount, "Insufficient token allowance");
+        // 检查多签账户中是否有足够的代币
+        uint256 userBalance = patToken.balanceOf(_beneficiary);
+        uint256 userAllowance = patToken.allowance(_beneficiary, address(this));
+        require(userBalance >= _amount, "Insufficient token balance");
+        require(userAllowance >= _amount, "Insufficient token allowance");
 
-        // 转移代币到锁仓钱包
-        // patToken.safeTransferFrom(msg.sender, vestingWallet, _amount);
+        // 转移代币 从 address(this) 到锁仓钱包
+        patToken.safeTransferFrom(_beneficiary, vestingWalletAddr, _amount);
 
-        poolVestingWallets[PATStorage.PoolType.INVESTOR].push(vestingWallet);
-        beneficiaryVestingWallets[_beneficiary].push(vestingWallet);
+        poolVestingWallets[PATStorage.PoolType.INVESTOR].push(vestingWalletAddr);
+        beneficiaryVestingWallets[_beneficiary].push(vestingWalletAddr);
 
-        emit VestingWalletCreated(PATStorage.PoolType.INVESTOR, vestingWallet, _beneficiary, _amount);
+        emit VestingWalletCreated(PATStorage.PoolType.INVESTOR, vestingWalletAddr, _beneficiary, _amount);
 
-        return vestingWallet;
+        return vestingWalletAddr;
     }
 
      /**
@@ -249,9 +250,9 @@ contract VestingFactory is
         VestingWallet wallet = VestingWallet(payable(_vestingWallet));
         address tokenAddress = address(patToken);
 
-        total = vestingInfos[_vestingWallet].totalAmount;
-        released = wallet.released(tokenAddress);
-        releasable = wallet.releasable(tokenAddress);
+        total = vestingInfos[_vestingWallet].totalAmount; // 总量
+        released = wallet.released(tokenAddress);         // 已释放
+        releasable = wallet.releasable(tokenAddress);     // 可释放
         
         return (total, released, releasable);
         
@@ -262,6 +263,24 @@ contract VestingFactory is
      * @param _vestingWallet 锁仓钱包地址
      */
     function releaseVestedTokens(address _vestingWallet) external onlyMultiSigOrOwner {
+        // 检查锁仓钱包是否有效
+        require(vestingInfos[_vestingWallet].beneficiary != address(0), "Invalid vesting wallet");
+        
+        // 检查是否已经提前赎回
+        require(!vestingInfos[_vestingWallet].isEarlyRedeemed, "Already early redeemed");
+        
+        // 获取锁仓钱包实例
+        VestingWallet wallet = VestingWallet(payable(_vestingWallet));
+        address tokenAddress = address(patToken);
+        
+        // 检查是否有可释放的代币
+        uint256 releasableAmount = wallet.releasable(tokenAddress);
+        require(releasableAmount > 0, "No tokens to release");
+        
+        // 释放代币
+        wallet.release(tokenAddress);
+        
+        emit TokensReleased(_vestingWallet, vestingInfos[_vestingWallet].beneficiary, releasableAmount);
     }
     
     /**

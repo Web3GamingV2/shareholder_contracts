@@ -44,9 +44,12 @@ abstract contract TreasuryPoolStorage is Initializable {
 
     // 用户余额映射 (用户地址 => 余额信息)
     mapping(address => UserBalance) public userBalances;
-    
-    // 授权的子合约池 (池地址 => 是否授权)
-    mapping(address => bool) public authorizedPools;
+
+    // 可赎回的映射
+    mapping(address => uint256) public redeemableBalances;
+    // 链下调用 tron 过程中的 锁定
+    mapping(address => uint256) public lockedBalancesTron;
+
     
     // 池类型映射 (池地址 => 用户类型)
     mapping(address => PATStorage.PoolType) public poolTypes;
@@ -56,9 +59,6 @@ abstract contract TreasuryPoolStorage is Initializable {
     mapping(PATStorage.PoolType => uint256) public totalInterests;    // 总利息
 
     uint256 public totalUsdtBalance; // 总USDT余额
-
-    // 合约授权
-    mapping(address => bool) public authorizedContracts; // 授权的子合约
 
     // 事件
     event PoolAuthorized(
@@ -116,6 +116,8 @@ abstract contract TreasuryPoolStorage is Initializable {
         uint256 timestamp
     );
 
+    event BalanceLocked (address indexed user, uint256 amount);
+
 
     /**
      * @dev 初始化存储合约
@@ -124,7 +126,6 @@ abstract contract TreasuryPoolStorage is Initializable {
         address _patToken,
         address _usdtToken,
         address _vestingFactory,
-        address _polygonConnector,
         address _multiSigWallet
     ) internal initializer {
         require(_patToken != address(0), "Invalid PAT address");
@@ -134,7 +135,6 @@ abstract contract TreasuryPoolStorage is Initializable {
         
         patCoin = IPATInterface(_patToken);
         usdtCoin = IERC20(_usdtToken);
-        polygonConnector = IPATLayerZeroBridge(_polygonConnector);
         multiSigWallet = _multiSigWallet;
     }
 

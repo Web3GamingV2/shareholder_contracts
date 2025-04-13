@@ -210,9 +210,8 @@ contract InvestorSalePool is
         }
     
         // 转移用户的 PAT 到锁仓钱包
-        // TODO 锁仓钱包后 patAmount 是否需要进入钱包
-        // TODO pat 是否需要转给用户
         patCoin.approve(address(vestingFactory), patAmount);
+        // TODO vestingStartTime 锁仓开始时间有问题
         address vestingWallet = IVestingFactory(vestingFactory).createVestingWallet(msg.sender, patAmount, vestingStartTime);
         // 重置授权
         patCoin.approve(address(vestingFactory), 0); 
@@ -246,15 +245,12 @@ contract InvestorSalePool is
 
     // 赎回已购买的PAT
     function release(uint256 _purchaseIndex) public nonReentrant whenNotPaused() {
-        (bool success, ) = releaseVested(_purchaseIndex);
-        if (!success) {
-            revert("Release failed");
-        }
+        releaseVested(_purchaseIndex);
         redeemReleased(_purchaseIndex);
     }
 
     /**
-     * @dev 释放已解锁的代币
+     * @dev 释放已解锁的代币数量并尝试释放
      * @param _purchaseIndex 购买记录索引
      */
     function releaseVested(uint256 _purchaseIndex) public nonReentrant whenNotPaused() returns(bool, uint256) {
@@ -264,7 +260,7 @@ contract InvestorSalePool is
         require(!purchaseOrder.isRedeemed, "Purchase already redeemed");
         
         address vestingWallet = purchaseOrder.vestingWallet;
-          // 调用VestingFactory释放代币
+          // 调用VestingFactory先获取可以释放的代币数量
         (, , uint256 releasable) = IVestingFactory(vestingFactory).getVestingStatus(vestingWallet);
 
         // 检查是否有可释放的代币
@@ -281,18 +277,20 @@ contract InvestorSalePool is
     /**
      * @dev 赎回已释放的代币为USDT
      * @param _purchaseIndex 购买记录索引
+     * TODO: 需要 chainlink 链接链下
      */
     function redeemReleased(uint256 _purchaseIndex) public nonReentrant whenNotPaused returns(bool)  {
+        // TODO这个 msg.sender 不一定是用户最好传进来
         require(_purchaseIndex < userPurchases[msg.sender].length, "Invalid purchase index");
         
         Purchase storage purchaseOrder = userPurchases[msg.sender][_purchaseIndex];
         require(!purchaseOrder.isRedeemed, "Purchase already redeemed");
         
-        // 获取用户在TreasuryPool中的PAT余额
+        // TODO 用户在TreasuryPool中已经没有余额
         uint256 patBalance = treasuryPool.getUserPatBalance(msg.sender);
         require(patBalance > 0, "No PAT balance in treasury");
         
-        // 计算可赎回的USDT金额（包括PAX利息）
+        // 计算可赎回的USDT金额（包括PAX利息） 按照 0.003 算
         uint256 usdtAmount = treasuryPool.calculateRedemptionAmount(msg.sender, patBalance);
         require(usdtAmount > 0, "No USDT to redeem");
         
