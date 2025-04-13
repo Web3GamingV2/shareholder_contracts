@@ -72,7 +72,8 @@ contract PAT is
 
     // 铸币
     function mint(address _recipient, uint256 _amount) external 
-        onlyAllowedRecipients(_recipient) onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) onlyBSCChain nonReentrant whenNotPaused {
+        onlyAllowedRecipients(_recipient)
+        onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) onlyBSCChain nonReentrant whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
         

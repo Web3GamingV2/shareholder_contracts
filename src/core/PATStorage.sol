@@ -13,12 +13,12 @@ abstract contract PATStorage is Initializable {
     }
 
     /// @dev 最小铸造时间间隔
-    uint256 public constant MIN_MINT_INTERVAL = 1 days; 
+    uint256 public constant MIN_MINT_INTERVAL = 7 days; 
 
     /// @dev The total supply of SBNG. 1亿
     uint256 public constant MAX_SUPPLY = 100_000_000 * 10 ** 6;
 
-    /// @dev 铸币总量上限的分母 表示为  MINT_CAP_MAX_NUMERATOR / MINT_CAP_DENOMINATOR 每次不能超过 10%
+    /// @dev 铸币总量上限的分母 表示为  MINT_CAP_MAX_NUMERATOR / MINT_CAP_DENOMINATOR 每次不能超过 5%
     uint256 public constant MINT_CAP_DENOMINATOR = 10_000;
 
     /// @dev 铸币总量上限的分子的最大值 5% 

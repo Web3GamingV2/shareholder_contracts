@@ -17,7 +17,7 @@ import "../core/PATStorage.sol";
 
 /**
  * @title TreasuryPool
- * @dev 资金池合约，负责管理USDT和PAT代币，以及计算利息
+ * @dev 资金池合约，负责管理USDT和PAT代币，以及计算利息 通过这个池子把 USDT 转入 polygon 网络 但是赎回逻辑需要从 tron 那边做
  */
 contract TreasuryPool is
     Initializable,
@@ -55,17 +55,17 @@ contract TreasuryPool is
         address _vestingFactory,
         address _polygonConnector
     ) public initializer {
-            __Ownable_init(_owner);
-            __ReentrancyGuard_init();
-            __Pausable_init();
-            __UUPSUpgradeable_init();
-            __TreasuryPoolStorage_init(
-                _patToken,
-                _usdtToken,
-                _vestingFactory,
-                _polygonConnector,
-                _multiSigWallet
-            );
+        __Ownable_init(_owner);
+        __ReentrancyGuard_init();
+        __Pausable_init();
+        __UUPSUpgradeable_init();
+        __TreasuryPoolStorage_init(
+            _patToken,
+            _usdtToken,
+            _vestingFactory,
+            _polygonConnector,
+            _multiSigWallet
+        );
     }
 
     /**
@@ -337,7 +337,6 @@ contract TreasuryPool is
     function transferUSDTToL2(uint256 _amount) external override onlyMultiSigOrOwner nonReentrant whenNotPaused {
         require(_amount > 0, "Amount must be > 0");
         require(totalUsdtBalance >= _amount, "Insufficient USDT balance");
-        
         // 更新总USDT余额
         totalUsdtBalance = totalUsdtBalance - _amount;
         

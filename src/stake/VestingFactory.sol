@@ -10,7 +10,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
 
 import "../interface/IPAT.sol";
-import "../interface/IRedemptionPool.sol";
 import "./VestingFactoryStorage.sol";
 import "../core/PATStorage.sol";
 
@@ -258,6 +257,10 @@ contract VestingFactory is
         
     }
 
+    /**
+     * @dev 释放锁仓钱包中的代币（由多签钱包或所有者调用）
+     * @param _vestingWallet 锁仓钱包地址
+     */
     function releaseVestedTokens(address _vestingWallet) external onlyMultiSigOrOwner {
     }
     

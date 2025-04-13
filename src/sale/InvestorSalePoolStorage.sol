@@ -16,9 +16,9 @@ abstract contract InvestorSalePoolStorage is Initializable {
     uint256 public constant usdtDecimal = 10 ** 6;
     uint256 public constant patDecimal = 10 ** 6;
 
-    IPATInterface public patCoin;  // PAT代币
-    IERC20 public usdt;               // USDT代币
-    ITreasuryPool public treasuryPool; // 资金池
+    IPATInterface public patCoin;          // PAT代币
+    IERC20 public usdt;                    // USDT代币
+    ITreasuryPool public treasuryPool;     // 资金池
     IVestingFactory public vestingFactory; // 锁仓工厂合约
     
     // 销售配置
