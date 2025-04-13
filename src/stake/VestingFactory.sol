@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/finance/VestingWallet.sol";
 import "../interface/IPAT.sol";
 import "../interface/IRedemptionPool.sol";
 import "./VestingFactoryStorage.sol";
+import "../core/PATStorage.sol";
 
 contract VestingFactory is
     Initializable,
@@ -57,13 +58,12 @@ contract VestingFactory is
        __VestingFactoryStorage_init(_patToken, _multiSigWallet, _earlyRedemptionFeeBps);
         
         // 一期只设置投资人池配置
-        _setPoolConfig(PoolType.INVESTOR, 0, 365 days, 0, true, true);  // 投资人池：无悬崖期，1年线性释放，无初始释放，可提前赎回
+        _setPoolConfig(PATStorage.PoolType.INVESTOR, 0, 365 days, 0, true, true);  // 投资人池：无悬崖期，1年线性释放，无初始释放，可提前赎回
         
         // 其他池子配置预留，但设置为非激活状态
-        _setPoolConfig(PoolType.DIRECT, 180 days, 730 days, 0, false, false);
-        _setPoolConfig(PoolType.LIQUIDITY, 0, 365 days, 1000, true, false);
-        _setPoolConfig(PoolType.FOUNDATION, 90 days, 365 days, 0, false, false);
-        _setPoolConfig(PoolType.RESERVE, 0, 730 days, 0, false, false);
+        _setPoolConfig(PATStorage.PoolType.DIRECT, 180 days, 730 days, 0, false, false);
+        _setPoolConfig(PATStorage.PoolType.FOUNDATION, 90 days, 365 days, 0, false, false);
+        _setPoolConfig(PATStorage.PoolType.RESERVE, 0, 730 days, 0, false, false);
     }
     
     /**
@@ -75,7 +75,7 @@ contract VestingFactory is
      * @param _canEarlyRedeem 是否可以提前赎回
      */
     function _setPoolConfig(
-        PoolType _poolType,
+        PATStorage.PoolType _poolType,
         uint64 _cliffDuration,
         uint64 _vestingDuration,
         uint256 _initialRelease,
@@ -101,7 +101,7 @@ contract VestingFactory is
      * @param _canEarlyRedeem 是否可以提前赎回
      */
     function setPoolConfig(
-        PoolType _poolType,
+        PATStorage.PoolType _poolType,
         uint64 _cliffDuration,
         uint64 _vestingDuration,
         uint256 _initialRelease,
@@ -127,9 +127,9 @@ contract VestingFactory is
 
         require(_beneficiary != address(0), "Invalid beneficiary");
         require(_amount > 0, "Amount must be > 0");
-        require(poolConfigs[PoolType.INVESTOR].isActive, "Investor pool not active");
+        require(poolConfigs[PATStorage.PoolType.INVESTOR].isActive, "Investor pool not active");
         
-        PoolInfo memory poolInfo = poolConfigs[PoolType.INVESTOR];
+        PoolInfo memory poolInfo = poolConfigs[PATStorage.PoolType.INVESTOR];
         
         // 创建锁仓钱包
         uint64 vestingStart = _startTimestamp + poolInfo.cliffDuration;
@@ -147,7 +147,7 @@ contract VestingFactory is
 
         // 记录锁仓信息
         vestingInfos[vestingWallet] = VestingInfo({
-            poolType: PoolType.INVESTOR,
+            poolType: PATStorage.PoolType.INVESTOR,
             beneficiary: _beneficiary,
             startTime: vestingStart,
             endTime: vestingEnd,
@@ -164,10 +164,10 @@ contract VestingFactory is
         // 转移代币到锁仓钱包
         // patToken.safeTransferFrom(msg.sender, vestingWallet, _amount);
 
-        poolVestingWallets[PoolType.INVESTOR].push(vestingWallet);
+        poolVestingWallets[PATStorage.PoolType.INVESTOR].push(vestingWallet);
         beneficiaryVestingWallets[_beneficiary].push(vestingWallet);
 
-        emit VestingWalletCreated(PoolType.INVESTOR, vestingWallet, _beneficiary, _amount);
+        emit VestingWalletCreated(PATStorage.PoolType.INVESTOR, vestingWallet, _beneficiary, _amount);
 
         return vestingWallet;
     }
@@ -185,7 +185,7 @@ contract VestingFactory is
     ) public onlyMultiSigOrOwner whenNotPaused nonReentrant {
         require(_beneficiaries.length == _amounts.length, "Arrays length mismatch");
         require(_beneficiaries.length > 0, "Empty arrays");
-        require(poolConfigs[PoolType.INVESTOR].isActive, "Investor pool not active");
+        require(poolConfigs[PATStorage.PoolType.INVESTOR].isActive, "Investor pool not active");
         // TODO 有一个锁仓钱包失败 是否全部revert掉了
          for (uint256 i = 0; i < _beneficiaries.length; i++) {
             if (_beneficiaries[i] != address(0) && _amounts[i] > 0) {
@@ -284,7 +284,7 @@ contract VestingFactory is
      * @dev 获取池子的所有锁仓钱包
      * @param _poolType 池子类型
      */
-    function getPoolVestingWallets(PoolType _poolType) public view override returns (address[] memory) {
+    function getPoolVestingWallets(PATStorage.PoolType _poolType) public view override returns (address[] memory) {
         return poolVestingWallets[_poolType];
     }
 

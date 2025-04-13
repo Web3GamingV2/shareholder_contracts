@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IPAT.sol";
 import "../interface/IVestingFactory.sol";
 import "../interface/IRedemptionPool.sol";
+import "../core/PATStorage.sol";
 
 abstract contract VestingFactoryStorage is Initializable, IVestingFactory {
     
@@ -18,13 +19,13 @@ abstract contract VestingFactoryStorage is Initializable, IVestingFactory {
     uint256 public earlyRedemptionFeeBps;
 
     // 池子类型到配置的映射
-    mapping(PoolType => PoolInfo) public poolConfigs;
+    mapping(PATStorage.PoolType => PoolInfo) public poolConfigs;
 
     // 锁仓钱包地址到锁仓信息的映射
     mapping(address => VestingInfo) public vestingInfos;
 
     // 池子类型到锁仓钱包的映射
-    mapping(PoolType => address[]) public poolVestingWallets;
+    mapping(PATStorage.PoolType => address[]) public poolVestingWallets;
 
     // 受益人地址到其锁仓钱包的映射
     mapping(address => address[]) public beneficiaryVestingWallets;

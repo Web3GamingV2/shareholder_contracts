@@ -13,6 +13,8 @@ import "../interface/ITreasuryPool.sol";
 import "../interface/IPATLayerZeroBridge.sol";
 import "./TreasuryPoolStorage.sol";
 
+import "../core/PATStorage.sol";
+
 /**
  * @title TreasuryPool
  * @dev 资金池合约，负责管理USDT和PAT代币，以及计算利息
@@ -73,7 +75,7 @@ contract TreasuryPool is
      * @param _patAmount PAT金额 
      */
     function depositUSDT(
-        PoolType _userType,
+        PATStorage.PoolType _userType,
         address _user,
         uint256 _usdtAmount,
         uint256 _patAmount
@@ -163,7 +165,7 @@ contract TreasuryPool is
         }
 
         // 确定用户类型（使用第一笔存款的类型）
-        PoolType userType;
+        PATStorage.PoolType userType;
         if (userBalances[_user].deposits.length > 0) {
             userType = userBalances[_user].deposits[0].userType;
         } else {
@@ -241,7 +243,7 @@ contract TreasuryPool is
 
          // 验证调用者是否是用户的存款来源
         bool isValidSource = false;
-        PoolType userType;
+        PATStorage.PoolType userType;
 
         // 遍历用户的存款记录
         for (uint256 i = 0; i < userBalances[_user].deposits.length; i++) {
@@ -301,7 +303,7 @@ contract TreasuryPool is
      */
     function authorizePool(
         address _pool,
-        PoolType _userType,
+        PATStorage.PoolType _userType,
         bool _isAuthorized
     ) external override onlyMultiSigOrOwner {
         require(_pool != address(0), "Invalid pool address");
@@ -406,7 +408,7 @@ contract TreasuryPool is
         uint256 usdtAmount,
         uint256 timestamp,
         address sourcePool,
-        PoolType userType
+        PATStorage.PoolType userType
     ) {
         require(_index < userBalances[_user].deposits.length, "Invalid deposit index");
         Deposit storage deposit = userBalances[_user].deposits[_index];
@@ -424,7 +426,7 @@ contract TreasuryPool is
      * @param _userType 用户类型
      * @return 总PAT余额
      */
-    function getTotalPatBalance(PoolType _userType) external view override returns (uint256) {
+    function getTotalPatBalance(PATStorage.PoolType _userType) external view override returns (uint256) {
         return totalPatBalances[_userType];
     }
     
@@ -433,7 +435,7 @@ contract TreasuryPool is
      * @param _userType 用户类型
      * @return 总利息
      */
-    function getTotalInterest(PoolType _userType) external view override returns (uint256) {
+    function getTotalInterest(PATStorage.PoolType _userType) external view override returns (uint256) {
         return totalInterests[_userType];
     }
 
