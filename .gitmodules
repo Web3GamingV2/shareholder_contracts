@@ -19,3 +19,6 @@
 [submodule "lib/contracts"]
 	path = lib/contracts
 	url = https://github.com/fx-portal/contracts
+[submodule "lib/chainlink"]
+	path = lib/chainlink
+	url = https://github.com/smartcontractkit/chainlink
