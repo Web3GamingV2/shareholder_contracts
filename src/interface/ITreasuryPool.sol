@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 import "../core/PATStorage.sol";
+import "../stake/TreasuryPoolStorage.sol";
 
 interface ITreasuryPool {
     /**
@@ -53,7 +54,7 @@ interface ITreasuryPool {
      * @param _patAmount PAT金额
      * @param _usdtAmount USDT金额
      */
-    function redeemPAT(address _user, uint256 _patAmount, uint256 _usdtAmount) external returns (uint256);
+    function redeemPAT(address _user, uint256 _patAmount, uint256 _usdtAmount) external returns (uint256, bytes32);
     
     /**
      * @dev 提取剩余USDT（仅限多签钱包）
@@ -100,6 +101,22 @@ interface ITreasuryPool {
      * @return 总利息
      */
     function getTotalInterest(PATStorage.PoolType _userType) external view returns (uint256);
+
+   /**
+    * @dev 恢复用户余额
+    * @param _user 用户地址
+    * @param _patAmount PAT金额
+    * @param _usdtAmount USDT金额
+    * @param _interestPortion 利息部分
+    * @param _userType 用户类型
+    */
+    function restoreUserBalance(
+        address _user,
+        uint256 _patAmount,
+        uint256 _usdtAmount,
+        uint256 _interestPortion,
+        PATStorage.PoolType _userType
+    ) external;
     
     /**
      * @dev 暂停合约

@@ -10,9 +10,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
+import "../interface/IRedeemManager.sol";
 import "../interface/IPATLayerZeroBridge.sol";
 import "./TreasuryPoolStorage.sol";
-
 import "../core/PATStorage.sol";
 
 /**
@@ -47,7 +47,8 @@ contract TreasuryPool is
         address _patToken,
         address _usdtToken,
         address _multiSigWallet,
-        address _vestingFactory
+        address _vestingFactory,
+        address _redeemManager
     ) public initializer {
         __Ownable_init(_owner);
         __ReentrancyGuard_init();
@@ -57,7 +58,8 @@ contract TreasuryPool is
             _patToken,
             _usdtToken,
             _vestingFactory,
-            _multiSigWallet
+            _multiSigWallet,
+            _redeemManager
         );
     }
 
@@ -229,7 +231,7 @@ contract TreasuryPool is
     function redeemPAT (
         address _user, 
         uint256 _patAmount, 
-        uint256 _usdtAmount) public override nonReentrant whenNotPaused returns (uint256) {
+        uint256 _usdtAmount) public override nonReentrant whenNotPaused returns (uint256, bytes32) {
         require(_user != address(0), "Invalid user address");
         require(_patAmount > 0, "PAT amount must be > 0");
         require(_usdtAmount > 0, "USDT amount must be > 0");
@@ -245,6 +247,7 @@ contract TreasuryPool is
             // 当前的user可以从多个子合约池注入资金
             // 但是赎回逻辑只能由一个子合约池调用
             // 从当前的 user 的充值记录中找到这个 子合约池
+            // 这里要求他从哪个池子进来再从哪个池子赎回
             if (userBalances[_user].deposits[i].sourcePool == msg.sender) {
                 isValidSource = true;
                 userType = userBalances[_user].deposits[i].userType;
@@ -274,27 +277,42 @@ contract TreasuryPool is
         // 更新总USDT余额
         totalUsdtBalance = totalUsdtBalance - _usdtAmount;
 
-        // 触发事件
-         emit PATRedeemed(
+        // 创建赎回请求
+        bytes32 requestId = IRedeemManager(redeemManager).createRedemptionRequest(
             _user,
-            msg.sender,
-            userType,
             _patAmount,
             _usdtAmount,
-            interestPortion
+            interestPortion,
+            userType,
+            msg.sender
         );
 
-        return _usdtAmount;
+        return (_usdtAmount, requestId);
         
     }
 
-    // 锁定用户赎回金额（仅允许管理员调用）
-    function lockBalanceWaitTron(address user, uint256 amount) external onlyOwner {
-        require(redeemableBalances[user] >= amount, "Insufficient redeemable balance");
-        redeemableBalances[user] -= amount;
-        lockedBalancesTron[user] += amount;
-        emit BalanceLocked(user, amount);
+    // 添加恢复用户余额的函数
+    function restoreUserBalance(
+        address _user,
+        uint256 _patAmount,
+        uint256 _usdtAmount,
+        uint256 _interestPortion,
+        PATStorage.PoolType _userType
+    ) external override {
+        require(msg.sender == redeemManager, "Only RedeemManager can call");
+        
+        // 恢复用户PAT余额
+        userBalances[_user].patAmount = userBalances[_user].patAmount + _patAmount;
+        totalPatBalances[_userType] = totalPatBalances[_userType] + _patAmount;
+        
+        // 恢复用户利息
+        userBalances[_user].interest = userBalances[_user].interest + _interestPortion;
+        totalInterests[_userType] = totalInterests[_userType] + _interestPortion;
+        
+        // 恢复总USDT余额
+        totalUsdtBalance = totalUsdtBalance + _usdtAmount;
     }
+
 
      /**
      * @dev 提取剩余USDT（仅限多签钱包）

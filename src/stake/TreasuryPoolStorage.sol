@@ -13,7 +13,6 @@ abstract contract TreasuryPoolStorage is Initializable {
 
     using SafeERC20 for IERC20;
     using SafeERC20 for IPATInterface;
-
      // 用户存款记录结构体
     struct Deposit {
         uint256 patAmount;     // PAT金额
@@ -41,15 +40,11 @@ abstract contract TreasuryPoolStorage is Initializable {
     IERC20 public usdtCoin;        // USDT代币
     IPATLayerZeroBridge public polygonConnector; // Polygon跨链连接器
     address public multiSigWallet; // 多签钱包地址
+    // 在合约定义中添加 RedeemManager 地址
+    address public redeemManager;
 
     // 用户余额映射 (用户地址 => 余额信息)
     mapping(address => UserBalance) public userBalances;
-
-    // 可赎回的映射
-    mapping(address => uint256) public redeemableBalances;
-    // 链下调用 tron 过程中的 锁定
-    mapping(address => uint256) public lockedBalancesTron;
-
     
     // 池类型映射 (池地址 => 用户类型)
     mapping(address => PATStorage.PoolType) public poolTypes;
@@ -59,6 +54,7 @@ abstract contract TreasuryPoolStorage is Initializable {
     mapping(PATStorage.PoolType => uint256) public totalInterests;    // 总利息
 
     uint256 public totalUsdtBalance; // 总USDT余额
+
 
     // 事件
     event PoolAuthorized(
@@ -118,7 +114,6 @@ abstract contract TreasuryPoolStorage is Initializable {
 
     event BalanceLocked (address indexed user, uint256 amount);
 
-
     /**
      * @dev 初始化存储合约
      */
@@ -126,8 +121,10 @@ abstract contract TreasuryPoolStorage is Initializable {
         address _patToken,
         address _usdtToken,
         address _vestingFactory,
-        address _multiSigWallet
+        address _multiSigWallet,
+        address _redeemManager
     ) internal initializer {
+
         require(_patToken != address(0), "Invalid PAT address");
         require(_usdtToken != address(0), "Invalid USDT address");
         require(_vestingFactory != address(0), "Invalid vesting factory address");
@@ -136,6 +133,7 @@ abstract contract TreasuryPoolStorage is Initializable {
         patCoin = IPATInterface(_patToken);
         usdtCoin = IERC20(_usdtToken);
         multiSigWallet = _multiSigWallet;
+        redeemManager = _redeemManager;
     }
 
 

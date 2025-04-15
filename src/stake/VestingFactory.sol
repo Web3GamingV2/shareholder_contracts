@@ -140,8 +140,8 @@ contract VestingFactory is
 
         VestingWallet vestingWallet = new VestingWallet(
             _beneficiary,
-            vestingStart,
-            poolInfo.vestingDuration
+            vestingStart, // 线性释放的起点
+            poolInfo.vestingDuration // 线性释放的持续时间
         );
         address vestingWalletAddr = address(vestingWallet);
 

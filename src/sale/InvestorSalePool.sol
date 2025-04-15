@@ -7,12 +7,14 @@ import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol
 import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+
 import "../core/PATStorage.sol";
 import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
 import "../stake/VestingFactoryStorage.sol";
 import "./InvestorSalePoolStorage.sol";
+import "../interface/IRedeemManager.sol";
 
 /**
  * @title 投资者销售池
@@ -49,8 +51,7 @@ contract InvestorSalePool is
         address _treasuryPool,
         address _vestingFactory,
         address _multiSigWallet,
-        uint256 _treasuryRatioBps, // 转入赎回池的比例（基点）默认是 1
-        uint64 _vestingStartTime
+        uint256 _treasuryRatioBps // 转入赎回池的比例（基点）默认是 1
     ) public initializer {
         __Ownable_init(_owner);
         __UUPSUpgradeable_init();
@@ -62,7 +63,6 @@ contract InvestorSalePool is
             _treasuryPool,
             _vestingFactory,
             _treasuryRatioBps,
-            _vestingStartTime,
             _multiSigWallet
         );
         __TierConfig_init();
@@ -125,17 +125,6 @@ contract InvestorSalePool is
     }
     
     /**
-     * @dev 设置锁仓开始时间
-     * @param _vestingStartTime 新的开始时间
-     */
-    function setVestingStartTime(uint64 _vestingStartTime) external onlyMultiSigOrOwner whenNotPaused {
-        require(_vestingStartTime > block.timestamp, "Start time must be in the future");
-        uint64 oldTime = vestingStartTime;
-        vestingStartTime = _vestingStartTime;
-        emit VestingStartTimeUpdated(oldTime, _vestingStartTime);
-    }
-    
-    /**
      * @dev 设置销售状态
      * @param _isActive 是否激活
      */
@@ -178,7 +167,7 @@ contract InvestorSalePool is
      * @dev 购买PAT代币
      * @param _usdtAmount USDT金额 1 : 1
      */
-    function purchase (uint256 _usdtAmount) public nonReentrant whenNotPaused() whenSaleActive()  {
+    function purchase (address _user, uint256 _usdtAmount) public nonReentrant whenNotPaused() whenSaleActive()  {
         require(_usdtAmount > 0, "Invalid PAT amount");
         // 确定投资者级别
         uint8 tier = getUserTier(_usdtAmount);
@@ -193,31 +182,32 @@ contract InvestorSalePool is
         require(contractPatBalance >= patAmount, "Insufficient PAT balance in contract");
         
          // 检查用户是否有足够的USDT
-        uint256 userUsdtBalance = usdt.balanceOf(msg.sender);
+        uint256 userUsdtBalance = usdt.balanceOf(_user);
         require(userUsdtBalance >= _usdtAmount, "Insufficient USDT balance");
 
         // 转移USDT到合约
-        usdt.transferFrom(msg.sender, address(this), _usdtAmount);
+        usdt.transferFrom(_user, address(this), _usdtAmount);
          // 计算转入赎回池的USDT金额
         uint256 treasuryAmount = (_usdtAmount * treasuryRatioBps) / 10000;
         
         // 转移USDT到投资人池
         if (treasuryAmount > 0) {
             usdt.approve(address(treasuryPool), treasuryAmount);
-            treasuryPool.depositUSDT(PATStorage.PoolType.INVESTOR, msg.sender, treasuryAmount, patAmount);
+            treasuryPool.depositUSDT(PATStorage.PoolType.INVESTOR, _user, treasuryAmount, patAmount);
             // 重置授权
             usdt.approve(address(treasuryPool), 0);
         }
     
         // 转移用户的 PAT 到锁仓钱包
         patCoin.approve(address(vestingFactory), patAmount);
-        // TODO vestingStartTime 锁仓开始时间有问题
-        address vestingWallet = IVestingFactory(vestingFactory).createVestingWallet(msg.sender, patAmount, vestingStartTime);
+          // 使用当前区块时间作为锁仓开始时间，确保锁仓立即开始
+        uint64 currentVestingStartTime = uint64(block.timestamp);
+        address vestingWallet = IVestingFactory(vestingFactory).createVestingWallet(_user, patAmount, currentVestingStartTime);
         // 重置授权
         patCoin.approve(address(vestingFactory), 0); 
 
         // 记录购买信息
-        userPurchases[msg.sender].push(Purchase({
+        userPurchases[_user].push(Purchase({
             usdtAmount: _usdtAmount,
             patAmount: patAmount,
             tier: tier,
@@ -227,12 +217,12 @@ contract InvestorSalePool is
         }));
 
         // 更新用户总投资金额
-        totalUserInvestment[msg.sender] += _usdtAmount;
+        totalUserInvestment[_user] += _usdtAmount;
          // 更新销售统计
         totalUsdtRaised += _usdtAmount;
         totalPatSold += patAmount;
 
-        emit PurchaseMade(msg.sender, _usdtAmount, patAmount, tier, vestingWallet);
+        emit PurchaseMade(_user, _usdtAmount, patAmount, tier, vestingWallet);
     }
 
     function getUserPurchases(address _user) public view returns (Purchase[] memory) {
@@ -243,19 +233,13 @@ contract InvestorSalePool is
         return totalUserInvestment[_user];
     }
 
-    // 赎回已购买的PAT
-    function release(uint256 _purchaseIndex) public nonReentrant whenNotPaused() {
-        releaseVested(_purchaseIndex);
-        redeemReleased(_purchaseIndex);
-    }
-
     /**
      * @dev 释放已解锁的代币数量并尝试释放
      * @param _purchaseIndex 购买记录索引
      */
-    function releaseVested(uint256 _purchaseIndex) public nonReentrant whenNotPaused() returns(bool, uint256) {
-        require(_purchaseIndex < userPurchases[msg.sender].length, "Invalid purchase index");
-        Purchase storage purchaseOrder = userPurchases[msg.sender][_purchaseIndex];
+    function releaseVested(address _user, uint256 _purchaseIndex) public nonReentrant whenNotPaused() returns(bool, uint256) {
+        require(_purchaseIndex < userPurchases[_user].length, "Invalid purchase index");
+        Purchase storage purchaseOrder = userPurchases[_user][_purchaseIndex];
         // 检查购买是否已赎回
         require(!purchaseOrder.isRedeemed, "Purchase already redeemed");
         
@@ -269,7 +253,7 @@ contract InvestorSalePool is
         // 调用VestingFactory释放代币
         IVestingFactory(vestingFactory).releaseVestedTokens(vestingWallet);
 
-        emit TokensReleased(msg.sender, vestingWallet, releasable);
+        emit TokensReleased(_user, vestingWallet, releasable);
 
         return (true, releasable); // 返回是否成功和释放的金额
     }
@@ -279,43 +263,82 @@ contract InvestorSalePool is
      * @param _purchaseIndex 购买记录索引
      * TODO: 需要 chainlink 链接链下
      */
-    function redeemReleased(uint256 _purchaseIndex) public nonReentrant whenNotPaused returns(bool)  {
-        // TODO这个 msg.sender 不一定是用户最好传进来
-        require(_purchaseIndex < userPurchases[msg.sender].length, "Invalid purchase index");
+    function redeemReleased(address _user, uint256 _purchaseIndex) public nonReentrant whenNotPaused returns(bytes32)  {
+        require(_purchaseIndex < userPurchases[_user].length, "Invalid purchase index");
         
-        Purchase storage purchaseOrder = userPurchases[msg.sender][_purchaseIndex];
+        Purchase storage purchaseOrder = userPurchases[_user][_purchaseIndex];
         require(!purchaseOrder.isRedeemed, "Purchase already redeemed");
         
-        // TODO 用户在TreasuryPool中已经没有余额
-        uint256 patBalance = treasuryPool.getUserPatBalance(msg.sender);
+        uint256 patBalance = treasuryPool.getUserPatBalance(_user);
         require(patBalance > 0, "No PAT balance in treasury");
         
         // 计算可赎回的USDT金额（包括PAX利息） 按照 0.003 算
-        uint256 usdtAmount = treasuryPool.calculateRedemptionAmount(msg.sender, patBalance);
+        uint256 usdtAmount = treasuryPool.calculateRedemptionAmount(_user, patBalance);
         require(usdtAmount > 0, "No USDT to redeem");
         
-        // 标记为已赎回
-        purchaseOrder.isRedeemed = true;
+        // 从TreasuryPool赎回USDT，获取请求ID
+        (uint256 actualUsdtAmount, bytes32 requestId) = treasuryPool.redeemPAT(_user, patBalance, usdtAmount);
+
+          // 记录赎回请求信息
+        redemptionRequests[requestId] = RedemptionRequest({
+            user: _user,
+            purchaseIndex: _purchaseIndex,
+            patAmount: patBalance,
+            usdtAmount: actualUsdtAmount,
+            timestamp: block.timestamp,
+            status: IRedeemManager.RedemptionStatus.PENDING
+        });
         
-        // 从TreasuryPool赎回USDT
-        // TODO 这个池子现在是没有钱的 从另一个 tron 的池子里转
-        treasuryPool.redeemPAT(msg.sender, patBalance, usdtAmount);
+        emit RedemptionRequested(requestId, _user, patBalance, actualUsdtAmount, _purchaseIndex);
+        
+        return requestId;
+    
+    }
+
+     /**
+     * @dev 完成赎回流程 - 由管理员调用，确认链下处理完成
+     * @param _requestId 赎回请求ID
+     */
+    function completeRedemption(bytes32 _requestId) external onlyMultiSigOrOwner nonReentrant {
+        RedemptionRequest storage request = redemptionRequests[_requestId];
+        require(request.user != address(0), "Invalid request ID");
+        require(request.status == IRedeemManager.RedemptionStatus.PENDING, "Request not pending");
+    
+        // 更新状态
+        request.status = IRedeemManager.RedemptionStatus.COMPLETED;
         
         // 销毁PAT代币
-        patCoin.burn(msg.sender, patBalance);
-
-        // 转移USDT到用户
-        usdt.transfer(msg.sender, usdtAmount);
-
+        patCoin.burn(request.user, request.patAmount);
+        
         // 更新销售统计
+        Purchase storage purchaseOrder = userPurchases[request.user][request.purchaseIndex];
+        // 标记为已赎回
+        purchaseOrder.isRedeemed = true;
         totalUsdtRaised -= purchaseOrder.usdtAmount;
         totalPatSold -= purchaseOrder.patAmount;
         // 更新用户总投资金额
-        totalUserInvestment[msg.sender] -= purchaseOrder.usdtAmount;
+        totalUserInvestment[request.user] -= purchaseOrder.usdtAmount;
         
-        emit TokensRedeemed(msg.sender, purchaseOrder.vestingWallet, patBalance, usdtAmount);
+        emit RedemptionCompleted(_requestId, request.user, request.patAmount, request.usdtAmount);
+    }
 
-        return true;
+     /**
+     * @dev 取消赎回流程 - 由管理员调用，确认链下处理失败
+     * @param _requestId 赎回请求ID
+     */
+    function cancelRedemption(bytes32 _requestId) external onlyMultiSigOrOwner nonReentrant {
+        RedemptionRequest storage request = redemptionRequests[_requestId];
+        require(request.user != address(0), "Invalid request ID");
+        require(request.status == IRedeemManager.RedemptionStatus.PENDING, "Request not pending");
+        
+        // 更新状态
+        request.status = IRedeemManager.RedemptionStatus.FAILED;
+        
+        // 取消标记为已赎回
+        Purchase storage purchaseOrder = userPurchases[request.user][request.purchaseIndex];
+        purchaseOrder.isRedeemed = false;
+        
+        emit RedemptionCancelled(_requestId, request.user, request.patAmount, request.usdtAmount);
     }
 
     function _authorizeUpgrade(address newImplementation)

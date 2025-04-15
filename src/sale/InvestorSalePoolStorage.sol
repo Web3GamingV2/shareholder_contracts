@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
+import "../interface/IRedeemManager.sol";
 
 abstract contract InvestorSalePoolStorage is Initializable {
 
@@ -23,9 +24,21 @@ abstract contract InvestorSalePoolStorage is Initializable {
     
     // 销售配置
     uint256 public treasuryRatioBps;       // 转入赎回池的比例（基点）
-    uint64 public vestingStartTime;        // 锁仓开始时间
     address public multiSigWallet;         // 多签钱包地址
     bool public saleActive;                // 销售是否激活
+
+    // 赎回请求映射
+    mapping(bytes32 => RedemptionRequest) public redemptionRequests;
+
+    // 赎回请求结构体
+    struct RedemptionRequest {
+        address user;              // 用户地址
+        uint256 purchaseIndex;     // 购买记录索引
+        uint256 patAmount;         // PAT金额
+        uint256 usdtAmount;        // USDT金额
+        uint256 timestamp;         // 时间戳
+        IRedeemManager.RedemptionStatus status;   // 状态
+    }
 
      // 投资者级别配置
     struct TierConfig {
@@ -84,13 +97,35 @@ abstract contract InvestorSalePoolStorage is Initializable {
         uint256 releasedAmount
     );
 
+    // 事件定义
+    event RedemptionRequested(
+        bytes32 indexed requestId,
+        address indexed user,
+        uint256 patAmount,
+        uint256 usdtAmount,
+        uint256 purchaseIndex
+    );
+
+    event RedemptionCompleted(
+        bytes32 indexed requestId,
+        address indexed user,
+        uint256 patAmount,
+        uint256 usdtAmount
+    );
+
+    event RedemptionCancelled(
+        bytes32 indexed requestId,
+        address indexed user,
+        uint256 patAmount,
+        uint256 usdtAmount
+    );
+
     function __InvestorSalePoolStorage_init(
         address _patCoin,
         address _usdt,
         address _treasuryPool,
         address _vestingFactory,
         uint256 _treasuryRatioBps,
-        uint64 _vestingStartTime,
         address _multiSigWallet
     ) internal initializer {
         patCoin = IPATInterface(_patCoin);
@@ -99,7 +134,6 @@ abstract contract InvestorSalePoolStorage is Initializable {
         vestingFactory = IVestingFactory(_vestingFactory);
 
         treasuryRatioBps = _treasuryRatioBps;
-        vestingStartTime = _vestingStartTime;
         multiSigWallet = _multiSigWallet;
         saleActive = false;
     }
