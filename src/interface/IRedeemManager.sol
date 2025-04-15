@@ -34,7 +34,7 @@ interface IRedeemManager {
      * @dev 确认赎回成功
      * @param _requestId 请求ID
      */
-    function confirmRedemptionSuccess(bytes32 _requestId) external;
+    function confirmRedemptionSuccess(bytes32 _requestId, string calldata _txHash) external;
     
     /**
      * @dev 确认赎回失败

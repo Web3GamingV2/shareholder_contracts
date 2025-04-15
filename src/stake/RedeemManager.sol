@@ -13,6 +13,21 @@ import "../interface/IRedeemManager.sol";
 /**
  * @title RedeemManager
  * @dev 管理赎回请求的合约，负责处理跨链赎回操作
+    initiateCrossChainRedemption 方法的调用场景主要在以下情况下：
+    当用户在EVM链上发起PAT代币赎回请求后，系统需要在TRON链上为用户提供相应的USDT。这个方法是连接EVM链和TRON链的关键环节。
+    具体调用场景如下：
+    1. 用户通过前端界面或直接调用合约发起PAT赎回请求
+    2. TreasuryPool合约调用RedeemManager的 createRedemptionRequest 方法创建赎回请求
+    3. 后端系统监听到 RedemptionRequested 事件
+    4. 后端系统（或管理员）调用 initiateCrossChainRedemption 方法，传入：
+    - 赎回请求ID
+    - 用户的TRON地址（如果用户之前没有设置过）
+    调用此方法后，会触发 CrossChainRedemptionInitiated 事件，后端系统会监听此事件并在TRON链上执行以下操作：
+
+    - 在TRON链上的锚定池中发起USDT提款请求
+    - 多签所有者确认提款请求
+    - USDT成功转账给用户后，调用 confirmRedemptionSuccess 方法确认赎回成功
+    这个方法是整个跨链赎回流程中的重要一环，它将EVM链上的赎回请求与TRON链上的USDT提款请求关联起
  */
 contract RedeemManager is
     Initializable,
@@ -21,6 +36,9 @@ contract RedeemManager is
     ReentrancyGuardUpgradeable,
     IRedeemManager
 {
+
+    // 用户的TRON地址映射
+    mapping(address => string) public userTronAddresses;
     
     // 锁定的赎回信息结构体
     struct LockedRedemption {
@@ -33,6 +51,15 @@ contract RedeemManager is
         uint256 timestamp;             // 时间戳
         IRedeemManager.RedemptionStatus status;       // 状态
     }
+
+    // 添加跨链提款相关的事件
+    event CrossChainRedemptionInitiated(
+        bytes32 indexed requestId,
+        address indexed user,
+        uint256 usdtAmount,
+        string tronAddress
+    );
+
     
     // 事件定义
     event RedemptionRequested(
@@ -52,7 +79,8 @@ contract RedeemManager is
         PATStorage.PoolType userType,
         uint256 patAmount,
         uint256 usdtAmount,
-        uint256 interestPortion
+        uint256 interestPortion,
+        string tronTxHash
     );
     
     event RedemptionFailed(
@@ -97,6 +125,35 @@ contract RedeemManager is
     function setTreasuryPool(address _treasuryPool) external onlyOwner {
         require(_treasuryPool != address(0), "Invalid TreasuryPool address");
         treasuryPool = _treasuryPool;
+    }
+    
+    /**
+    * @dev 初始化跨链赎回请求
+    * @param _requestId 赎回请求ID
+    * @param _tronAddress 用户的TRON地址
+    */
+    function initiateCrossChainRedemption(bytes32 _requestId, string calldata _tronAddress) external onlyOwner nonReentrant {
+
+        LockedRedemption storage redemption = lockedRedemptions[_requestId];
+        require(redemption.user != address(0), "Invalid request ID");
+        require(redemption.status == RedemptionStatus.PENDING, "Request not pending");
+        
+        // 如果提供了TRON地址，则更新用户的TRON地址
+        if (bytes(_tronAddress).length > 0) {
+            userTronAddresses[redemption.user] = _tronAddress;
+        }
+        
+        // 确保用户有TRON地址
+        string memory userTronAddr = userTronAddresses[redemption.user];
+        require(bytes(userTronAddr).length > 0, "User TRON address not set");
+        
+        // 触发跨链赎回事件，后端监听此事件并在TRON链上执行转账
+        emit CrossChainRedemptionInitiated(
+            _requestId,
+            redemption.user,
+            redemption.usdtAmount,
+            userTronAddr
+        );
     }
     
     /**
@@ -150,8 +207,9 @@ contract RedeemManager is
     /**
      * @dev 确认赎回成功 - 由业务系统回调
      * @param _requestId 请求ID
+     * @param _txHash TRON链上的交易哈希（可选）
      */
-    function confirmRedemptionSuccess(bytes32 _requestId) external onlyOwner nonReentrant {
+    function confirmRedemptionSuccess(bytes32 _requestId, string calldata _txHash) external onlyOwner nonReentrant {
         LockedRedemption storage redemption = lockedRedemptions[_requestId];
         require(redemption.user != address(0), "Invalid request ID");
         require(redemption.status == RedemptionStatus.PENDING, "Request not pending");
@@ -167,7 +225,8 @@ contract RedeemManager is
             redemption.userType,
             redemption.patAmount,
             redemption.usdtAmount,
-            redemption.interestPortion
+            redemption.interestPortion,
+            _txHash
         );
     }
     
@@ -231,6 +290,17 @@ contract RedeemManager is
             redemption.usdtAmount,
             redemption.status
         );
+    }
+
+    /**
+    * @dev 设置用户的TRON地址
+    * @param _user 用户地址
+    * @param _tronAddress TRON地址
+    */
+    function setUserTronAddress(address _user, string calldata _tronAddress) external {
+        // 只允许用户自己或管理员设置
+        require(msg.sender == _user || msg.sender == owner(), "Not authorized");
+        userTronAddresses[_user] = _tronAddress;
     }
     
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
