@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
+import "../interface/IPAX.sol";
 import "../interface/IPAT.sol";
 import "../interface/IPATLayerZeroBridge.sol";
 import "../interface/ITreasuryPool.sol";
@@ -37,6 +38,7 @@ abstract contract TreasuryPoolStorage is Initializable {
 
     // 状态变量
     IPATInterface public patCoin;  // PAT代币
+    IPAXInterface public paxCoin;  // PAX代币
     IERC20 public usdtCoin;        // USDT代币
     IPATLayerZeroBridge public polygonConnector; // Polygon跨链连接器
     address public multiSigWallet; // 多签钱包地址
@@ -51,7 +53,6 @@ abstract contract TreasuryPoolStorage is Initializable {
     
     // 总余额（按合约池类型）
     mapping(PATStorage.PoolType => uint256) public totalPatBalances;  // 总PAT余额
-    mapping(PATStorage.PoolType => uint256) public totalInterests;    // 总利息
 
     uint256 public totalUsdtBalance; // 总USDT余额
 
@@ -112,13 +113,19 @@ abstract contract TreasuryPoolStorage is Initializable {
         uint256 timestamp
     );
 
-    event BalanceLocked (address indexed user, uint256 amount);
+     
+    // 事件
+    event DividendClaimed(address indexed user, uint256 amount);
+    event DividendRateChanged(uint256 oldRate, uint256 newRate);
+    // 添加事件
+    event PaxExchangedForPat(address indexed user, uint256 amount);
 
     /**
      * @dev 初始化存储合约
      */
     function __TreasuryPoolStorage_init(
         address _patToken,
+        address _paxToken,
         address _usdtToken,
         address _vestingFactory,
         address _multiSigWallet,
@@ -131,6 +138,7 @@ abstract contract TreasuryPoolStorage is Initializable {
         require(_multiSigWallet != address(0), "Invalid multisig wallet address");
         
         patCoin = IPATInterface(_patToken);
+        paxCoin = IPAXInterface(_paxToken);
         usdtCoin = IERC20(_usdtToken);
         multiSigWallet = _multiSigWallet;
         redeemManager = _redeemManager;

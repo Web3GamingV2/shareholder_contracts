@@ -61,8 +61,6 @@ contract PAX is
         __Pausable_init();
         __UUPSUpgradeable_init();
         treasuryPool = _treasuryPool;
-        coefficientNumerator = 3;
-        coefficientDenominator = 1000;
     }
 
     // 重新设置赎回池地址
@@ -70,11 +68,6 @@ contract PAX is
         address _oldTreasuryPool = treasuryPool;
         treasuryPool = _treasuryPool;
         emit TreasuryPoolChanged(msg.sender, _oldTreasuryPool, _treasuryPool);
-    }
-
-    function setCoefficientNumerator(uint256 _coefficientNumerator) public onlyOwner {
-        require(_coefficientNumerator <= MAX_COEFFICIENT, "Coefficient numerator too large");
-        coefficientNumerator = _coefficientNumerator;
     }
 
     function pause() public onlyOwner {

@@ -16,8 +16,7 @@ interface IPAXInterface is IERC20 {
     event ContractUpgraded(address indexed from, address indexed newContract);
     event AllowedRecipientsUpdated(address indexed from, address indexed minter, bool isAllowed);
     event SBNGC_PAXToken_CoefficientNumeratorTooLarge(uint256 coefficientNumerator, uint256 coefficientDenominator);
-
-    function setCoefficientNumerator(uint256 coefficientNumerator) external;
+    
     function setTreasuryPool(address _treasuryPool) external;
 
     function mint(address _recipient, uint256 _amount) external;

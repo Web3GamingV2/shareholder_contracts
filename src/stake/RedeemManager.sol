@@ -247,7 +247,6 @@ contract RedeemManager is
             redemption.user,
             redemption.patAmount,
             redemption.usdtAmount,
-            redemption.interestPortion,
             redemption.userType
         );
         

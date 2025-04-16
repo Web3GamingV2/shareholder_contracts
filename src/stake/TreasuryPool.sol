@@ -45,6 +45,7 @@ contract TreasuryPool is
     function initialize(
         address _owner,
         address _patToken,
+        address _paxToken,
         address _usdtToken,
         address _multiSigWallet,
         address _vestingFactory,
@@ -56,6 +57,7 @@ contract TreasuryPool is
         __UUPSUpgradeable_init();
         __TreasuryPoolStorage_init(
             _patToken,
+            _paxToken,
             _usdtToken,
             _vestingFactory,
             _multiSigWallet,
@@ -83,13 +85,6 @@ contract TreasuryPool is
         // 存入USDT
         IERC20(usdtCoin).safeTransferFrom(msg.sender, address(this), _usdtAmount);
 
-        // 如果用户已有余额，先计算之前的利息
-        if (userBalances[_user].patAmount > 0 && userBalances[_user].lastInterestTime > 0) {
-            uint256 newInterest = calculateInterest(_user);
-            userBalances[_user].interest = userBalances[_user].interest + newInterest;
-            totalInterests[_userType] = totalInterests[_userType] + newInterest;
-        }
-        
         // 创建新的存款记录
         Deposit memory newDeposit = Deposit({
             usdtAmount: _usdtAmount,
@@ -107,8 +102,6 @@ contract TreasuryPool is
         // 更新总余额
         totalUsdtBalance = totalUsdtBalance + _usdtAmount;
         totalPatBalances[_userType] = totalPatBalances[_userType] + _patAmount;
-        // 更新总利息
-        totalInterests[_userType] = totalInterests[_userType] + calculateInterest(_user);
 
         // 触发事件
         emit USDTDeposited(
@@ -126,8 +119,9 @@ contract TreasuryPool is
      * @dev 获取用户PAT余额
      * @param _user 用户地址
      * @return balance PAT余额
+     * 计算分红
      */
-    function calculateInterest(address _user) public view override returns (uint256) {
+    function calculateDividend(address _user) public view override returns (uint256) {
         if (userBalances[_user].patAmount == 0 || userBalances[_user].lastInterestTime == 0) {
             return 0;
         }
@@ -151,34 +145,55 @@ contract TreasuryPool is
         return interestAmount;
     }
 
-    function updateInterest (address _user) public override nonReentrant whenNotPaused returns (uint256) {
-        uint256 interestAmount = calculateInterest(_user);
+    /**
+    * @dev 用户将PAX兑换为PAT
+    * @param _amount 要兑换的PAX数量
+    * @return 兑换成功的PAT数量
+    */
+    function exchangePaxForPat(address _user, uint256 _amount) external nonReentrant whenNotPaused returns (uint256) {
+        require(_amount > 0, "Amount must be > 0");
         
-        if (interestAmount == 0) {
-            return 0;
-        }
+        // 检查用户PAX余额
+        uint256 paxBalance = paxCoin.balanceOf(_user);
+        require(paxBalance >= _amount, "Insufficient PAX balance");
+        
+        // 销毁用户的PAX
+        paxCoin.burn(_user, _amount);
+        
+        // 转移相应数量的PAT给用户
+        patCoin.safeTransfer(_user, _amount);
+        
+        emit PaxExchangedForPat(msg.sender, _amount);
+        
+        return _amount;
+    }
 
-        // 确定用户类型（使用第一笔存款的类型）
-        PATStorage.PoolType userType;
-        if (userBalances[_user].deposits.length > 0) {
-            userType = userBalances[_user].deposits[0].userType;
-        } else {
-            return 0; // 没有存款记录，不更新利息
-        }
-
+     /**
+     * @dev 用户领取 PAX 分红
+     * @return 领取的分红金额
+     */
+    function claimDividend(address _user) external nonReentrant whenNotPaused returns (uint256) {
+        uint256 dividendAmount = calculateDividend(_user);
+        require(dividendAmount > 0, "No dividend to claim");
+        
         // 更新上次计息时间
         userBalances[_user].lastInterestTime = block.timestamp;
+        
+        // 铸造 PAX 给用户
+        paxCoin.mint(_user, dividendAmount);
+        
+        emit DividendClaimed(msg.sender, dividendAmount);
+        
+        return dividendAmount;
+    }
 
-        // 更新用户利息
-        userBalances[_user].interest = userBalances[_user].interest + interestAmount;
-        // 更新总利息
-        totalInterests[userType] = totalInterests[userType] + interestAmount;
-
-        // 触发事件
-        emit InterestCalculated(_user, userBalances[_user].patAmount, interestAmount, block.timestamp);
-
-        return interestAmount;
-
+    /**
+     * @dev 获取用户可领取的分红
+     * @param _user 用户地址
+     * @return dividend 可领取的分红
+     */
+    function getUserDividend(address _user) external view returns (uint256) {
+        return calculateDividend(_user);
     }
 
     /**
@@ -190,33 +205,16 @@ contract TreasuryPool is
         return userBalances[_user].patAmount;
     }
     
-     /**
-     * @dev 获取用户累积利息
-     * @param _user 用户地址
-     * @return interest 累积利息
-     */
-    function getUserInterest(address _user) external view override returns (uint256) {
-        return userBalances[_user].interest + calculateInterest(_user);
-    }
-
     /**
      * @dev 获取用户的存款记录
      * @param _user 用户地址
      */
     function calculateRedemptionAmount (address _user, uint256 _patAmount) public view override returns (uint256) {
-        require(_patAmount > 0, "PAT amount must be > 0");
-        require(userBalances[_user].patAmount >= _patAmount, "Insufficient PAT balance");
+       require(_patAmount > 0, "PAT amount must be > 0");
+       require(userBalances[_user].patAmount >= _patAmount, "Insufficient PAT balance");
         
-        uint256 interestAmount = calculateInterest(_user);
-         // 计算当前累积的利息
-        uint256 currentInterest = userBalances[_user].interest + interestAmount;
-        // 计算可赎回的利息比例
-        uint256 interestPortion = 0;
-        if (userBalances[_user].patAmount > 0) {
-            interestPortion = currentInterest * _patAmount / userBalances[_user].patAmount;
-        }
-         // 总赎回金额 = PAT金额 + 利息部分
-        return _patAmount + interestPortion;
+        // 总赎回金额 = PAT金额（不再包含利息部分）
+        return _patAmount;
     }
 
       /**
@@ -257,22 +255,9 @@ contract TreasuryPool is
         
         require(isValidSource, "Not the source pool");
 
-        // 先更新利息
-        updateInterest(_user);
-        
-         // 计算可赎回的利息比例
-        uint256 interestPortion = 0;
-        if (userBalances[_user].patAmount > 0) {
-            interestPortion = userBalances[_user].interest * _patAmount / userBalances[_user].patAmount;
-        }
-
         // 更新用户PAT余额
         userBalances[_user].patAmount = userBalances[_user].patAmount - _patAmount;
         totalPatBalances[userType] = totalPatBalances[userType] - _patAmount;
-        
-        // 更新用户利息
-        userBalances[_user].interest = userBalances[_user].interest - interestPortion;
-        totalInterests[userType] = totalInterests[userType] - interestPortion;
         
         // 更新总USDT余额
         totalUsdtBalance = totalUsdtBalance - _usdtAmount;
@@ -282,7 +267,7 @@ contract TreasuryPool is
             _user,
             _patAmount,
             _usdtAmount,
-            interestPortion,
+            0,
             userType,
             msg.sender
         );
@@ -296,7 +281,6 @@ contract TreasuryPool is
         address _user,
         uint256 _patAmount,
         uint256 _usdtAmount,
-        uint256 _interestPortion,
         PATStorage.PoolType _userType
     ) external override {
         require(msg.sender == redeemManager, "Only RedeemManager can call");
@@ -304,10 +288,6 @@ contract TreasuryPool is
         // 恢复用户PAT余额
         userBalances[_user].patAmount = userBalances[_user].patAmount + _patAmount;
         totalPatBalances[_userType] = totalPatBalances[_userType] + _patAmount;
-        
-        // 恢复用户利息
-        userBalances[_user].interest = userBalances[_user].interest + _interestPortion;
-        totalInterests[_userType] = totalInterests[_userType] + _interestPortion;
         
         // 恢复总USDT余额
         totalUsdtBalance = totalUsdtBalance + _usdtAmount;
@@ -376,15 +356,7 @@ contract TreasuryPool is
     function getTotalPatBalance(PATStorage.PoolType _userType) external view override returns (uint256) {
         return totalPatBalances[_userType];
     }
-    
-    /**
-     * @dev 获取特定类型的总利息
-     * @param _userType 用户类型
-     * @return 总利息
-     */
-    function getTotalInterest(PATStorage.PoolType _userType) external view override returns (uint256) {
-        return totalInterests[_userType];
-    }
+
 
     function pause() external onlyOwner {
         _pause();

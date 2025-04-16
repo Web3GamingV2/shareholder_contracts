@@ -18,27 +18,13 @@ interface ITreasuryPool {
      * @return balance PAT余额
      */
     function getUserPatBalance(address _user) external view returns (uint256);
-
-     /**
-     * @dev 获取用户累积利息
-     * @param _user 用户地址
-     * @return interest 累积利息
-     */
-    function getUserInterest(address _user) external view returns (uint256);
     
     /**
      * @dev 计算用户的利息
      * @param _user 用户地址
      * @return interestAmount 利息金额
      */
-    function calculateInterest(address _user) external view returns (uint256);
-    
-    /**
-     * @dev 更新用户利息
-     * @param _user 用户地址
-     * @return interestAmount 新增利息金额
-     */
-    function updateInterest(address _user) external returns (uint256);
+    function calculateDividend(address _user) external view returns (uint256);
     
 
     /**
@@ -95,26 +81,18 @@ interface ITreasuryPool {
      */
     function getTotalPatBalance(PATStorage.PoolType _userType) external view returns (uint256);
     
-    /**
-     * @dev 获取特定类型的总利息
-     * @param _userType 用户类型
-     * @return 总利息
-     */
-    function getTotalInterest(PATStorage.PoolType _userType) external view returns (uint256);
 
    /**
     * @dev 恢复用户余额
     * @param _user 用户地址
     * @param _patAmount PAT金额
     * @param _usdtAmount USDT金额
-    * @param _interestPortion 利息部分
     * @param _userType 用户类型
     */
     function restoreUserBalance(
         address _user,
         uint256 _patAmount,
         uint256 _usdtAmount,
-        uint256 _interestPortion,
         PATStorage.PoolType _userType
     ) external;
     

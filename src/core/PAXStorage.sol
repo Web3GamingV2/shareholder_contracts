@@ -17,10 +17,6 @@ abstract contract PAXStorage {
     /// @dev The total supply of SBNG that has been burned.
     uint256 public burnedSupply;
 
-    /// @dev 系数
-    uint256 public coefficientNumerator;    // 分子：3
-    uint256 public coefficientDenominator;  // 分母：1000
-
     // @dev 允许的池子地址
     mapping (address => bool) allowedRecipients;
 
