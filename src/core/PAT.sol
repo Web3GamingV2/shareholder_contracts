@@ -143,7 +143,8 @@ contract PAT is
         _unpause();
     }
 
-    function setAllowedRecipient(address _recipient, bool allowed) external onlyOwner whenNotPaused {
+    // 白名单多签控制
+    function setAllowedRecipient(address _recipient, bool allowed) external onlyAllowedMultiSigWalletCall(multiSigWallet) whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         allowedRecipients[_recipient] = allowed;
         emit AllowedRecipientsUpdated(msg.sender, _recipient, allowed);
