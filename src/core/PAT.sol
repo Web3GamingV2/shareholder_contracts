@@ -144,7 +144,7 @@ contract PAT is
         _unpause();
     }
 
-    // 白名单多签控制
+    // 白名单多签控制 设置铸币/销毁地址
     function setAllowedRecipient(address _recipient, bool allowed) external onlyAllowedMultiSigWalletCall(multiSigWallet) whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         allowedRecipients[_recipient] = allowed;
