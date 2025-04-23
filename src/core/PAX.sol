@@ -34,7 +34,7 @@ contract PAX is
     }
 
     modifier onlyBSCChain() {
-        require(block.chainid == 56, SBNGC_PAXToken_NotBSCChain(block.chainid));
+        require(block.chainid == CHAIN_ID, SBNGC_PAXToken_NotBSCChain(block.chainid));
         _;
     }
 

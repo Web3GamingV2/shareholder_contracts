@@ -33,11 +33,12 @@ contract PAT is
         _disableInitializers();
     }
 
-    modifier onlyBSCChain() {
-        require(block.chainid == 56, SBNGC_PATToken_NotBSCChain(block.chainid));
+    modifier onlyEthereumChain() {
+        require(block.chainid == CHAIN_ID, SBNGC_PATToken_NotBSCChain(block.chainid));
         _;
     }
 
+    // 只能通过指定的池子销毁
     modifier onlyAllowedRecipients(address _recipient) {
         require(allowedRecipients[_recipient], SBNGC_PATToken_NotAllowedRecipientsAddress(_recipient));
         _;
@@ -70,10 +71,10 @@ contract PAT is
         __PATStorage_init(_multiSigWallet);
     }
 
-    // 铸币
+    // 铸币 只能由指定的地址触发 mint 调用 到指定的池子里
     function mint(address _recipient, uint256 _amount) external 
         onlyAllowedRecipients(_recipient)
-        onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) onlyBSCChain nonReentrant whenNotPaused {
+        onlyAllowedMultiSigWalletAndOwnCall(multiSigWallet) nonReentrant whenNotPaused {
         require(_recipient != address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
         
@@ -106,7 +107,7 @@ contract PAT is
     }
 
     // 销毁 由赎回池调用
-    function burn(address addrPool, uint256 _amount) external onlyAllowedRecipients(addrPool) onlyBSCChain nonReentrant whenNotPaused {
+    function burn(address addrPool, uint256 _amount) external onlyAllowedRecipients(addrPool) nonReentrant whenNotPaused {
 
         require(addrPool!= address(0), SBNGC_PATToken_InvalidAddress());
         require(_amount > 0, SBNGC_PATToken_ImproperlyInitialized());
@@ -150,7 +151,7 @@ contract PAT is
         emit AllowedRecipientsUpdated(msg.sender, _recipient, allowed);
     }
 
-    function isAllowedRecipient(address _recipient) external view returns (bool) {
+    function isAllowedRecipient(address _recipient) public view returns (bool) {
         return allowedRecipients[_recipient]; 
     }
 
