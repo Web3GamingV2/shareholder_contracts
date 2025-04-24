@@ -28,6 +28,11 @@ contract VestingFactory is
         require(msg.sender == multiSigWallet || msg.sender == owner(), "Not multisig or owner");
         _;
     }
+
+    modifier onlyInvestorSalePool() {
+        require(msg.sender == investorSalePool, "Not investor sale pool");
+        _;
+    }
     
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -41,7 +46,9 @@ contract VestingFactory is
      * @param _earlyRedemptionFeeBps 提前赎回费率（基点）
      */
     function initialize(
+        address _initalOwner,
         address _patToken,
+        address _investorSalePool,
         address _multiSigWallet,
         uint256 _earlyRedemptionFeeBps
     ) initializer public {
@@ -49,12 +56,12 @@ contract VestingFactory is
         require(_multiSigWallet != address(0), "Invalid multisig wallet address");
         require(_earlyRedemptionFeeBps <= 10000, "Fee cannot exceed 100%");
         
-        __Ownable_init(msg.sender);
+        __Ownable_init(_initalOwner);
         __ReentrancyGuard_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
         
-       __VestingFactoryStorage_init(_patToken, _multiSigWallet, _earlyRedemptionFeeBps);
+       __VestingFactoryStorage_init(_patToken, _investorSalePool, _multiSigWallet, _earlyRedemptionFeeBps);
         
         // 一期只设置投资人池配置
         _setPoolConfig(PATStorage.PoolType.INVESTOR, 0, 365 days, 0, true, true);  // 投资人池：无悬崖期，1年线性释放，无初始释放，可提前赎回
@@ -105,7 +112,7 @@ contract VestingFactory is
         uint64 _vestingDuration,
         uint256 _initialRelease,
         bool _canEarlyRedeem
-    ) public override onlyMultiSigOrOwner whenNotPaused {
+    ) public override onlyOwner() whenNotPaused {
         require(_vestingDuration > 0, "Vesting duration must be > 0");
         require(_initialRelease <= 10000, "Initial release cannot exceed 100%");
         
@@ -122,7 +129,7 @@ contract VestingFactory is
         address _beneficiary,
         uint256 _amount,
         uint64 _startTimestamp
-    ) public onlyMultiSigOrOwner whenNotPaused nonReentrant returns (address) {
+    ) public onlyInvestorSalePool whenNotPaused nonReentrant returns (address) {
 
         require(_beneficiary != address(0), "Invalid beneficiary");
         require(_amount > 0, "Amount must be > 0");
@@ -182,7 +189,7 @@ contract VestingFactory is
         address[] calldata _beneficiaries,
         uint256[] calldata _amounts,
         uint64 _startTimestamp
-    ) public onlyMultiSigOrOwner whenNotPaused nonReentrant {
+    ) public onlyInvestorSalePool whenNotPaused nonReentrant {
         require(_beneficiaries.length == _amounts.length, "Arrays length mismatch");
         require(_beneficiaries.length > 0, "Empty arrays");
         require(poolConfigs[PATStorage.PoolType.INVESTOR].isActive, "Investor pool not active");
@@ -197,42 +204,10 @@ contract VestingFactory is
      /**
      * @dev 提前赎回锁仓代币（由受益人调用）
      * @param _vestingWallet 锁仓钱包地址
+     * TODO: 这一期不给提前赎回的能力
      */
      function earlyRedeem(address _vestingWallet) public override nonReentrant whenNotPaused {
-         VestingInfo storage info = vestingInfos[_vestingWallet];
-
-          // 检查是否是受益人
-        require(info.beneficiary == msg.sender, "Not beneficiary");
-        
-        // 检查是否可以提前赎回
-        require(poolConfigs[info.poolType].canEarlyRedeem, "Early redemption not allowed");
-
-        // 检查是否已经提前赎回
-        require(!info.isEarlyRedeemed, "Already redeemed");
-
-         // 获取锁仓钱包中的代币余额
-        uint256 balance = patToken.balanceOf(_vestingWallet);
-        require(balance > 0, "No tokens to redeem");
-
-        // 计算提前赎回手续费
-        // TODO 所有子合约池的提前赎回手续费是否一样
-        uint256 fee = (balance * earlyRedemptionFeeBps) / 10000;
-        uint256 redemptionAmount = balance - fee;
-
-        // 标记为已提前赎回
-        info.isEarlyRedeemed = true;
-        
-        // TODO 用一个代理合约来处理 或者 自定义的VestingWallet实现 why?
-
-        // // 转账赎回金额给受益人
-        // patToken.safeTransferFrom(_vestingWallet, msg.sender, redemptionAmount);
-
-        //  // 转账费用给赎回池
-        // if (fee > 0) {
-        //     patToken.safeTransferFrom(_vestingWallet, address(redemptionPool), fee);
-        // }
-
-        emit EarlyRedemptionPerformed(_vestingWallet, msg.sender, redemptionAmount, fee);
+        // emit EarlyRedemptionPerformed(_vestingWallet, msg.sender, redemptionAmount, fee);
     }
 
     /**
@@ -262,7 +237,7 @@ contract VestingFactory is
      * @dev 释放锁仓钱包中的代币（由多签钱包或所有者调用）
      * @param _vestingWallet 锁仓钱包地址
      */
-    function releaseVestedTokens(address _vestingWallet) external onlyMultiSigOrOwner {
+    function releaseVestedTokens(address _vestingWallet) external onlyInvestorSalePool {
         // 检查锁仓钱包是否有效
         require(vestingInfos[_vestingWallet].beneficiary != address(0), "Invalid vesting wallet");
         
@@ -278,6 +253,8 @@ contract VestingFactory is
         require(releasableAmount > 0, "No tokens to release");
         
         // 释放代币
+        // createWallet的时候 通过 Owneable 指定了 _beneficiary 就是 owner
+        // 所以 这里的 release 就是 owner 调用的
         wallet.release(tokenAddress);
         
         emit TokensReleased(_vestingWallet, vestingInfos[_vestingWallet].beneficiary, releasableAmount);
@@ -313,14 +290,14 @@ contract VestingFactory is
      /**
      * @dev 暂停合约
      */
-    function pause() external override onlyMultiSigOrOwner {
+    function pause() external override onlyOwner {
         _pause();
     }
     
     /**
      * @dev 恢复合约
      */
-    function unpause() external override onlyMultiSigOrOwner {
+    function unpause() external override onlyOwner {
         _unpause();
     }
 

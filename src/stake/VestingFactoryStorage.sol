@@ -11,6 +11,9 @@ abstract contract VestingFactoryStorage is Initializable, IVestingFactory {
     // PAT代币合约
     IPATInterface public patToken;
 
+    // 直接销售池子地址
+    address public investorSalePool;
+
     // 多签钱包地址
     address public multiSigWallet;
 
@@ -37,10 +40,12 @@ abstract contract VestingFactoryStorage is Initializable, IVestingFactory {
 
     function __VestingFactoryStorage_init(
         address _patToken,
+        address _investorSalePool,
         address _multiSigWallet,
         uint256 _earlyRedemptionFeeBps
     ) internal initializer {
         patToken = IPATInterface(_patToken);
+        investorSalePool = _investorSalePool;
         multiSigWallet = _multiSigWallet;
         earlyRedemptionFeeBps = _earlyRedemptionFeeBps;
         version = 1;
