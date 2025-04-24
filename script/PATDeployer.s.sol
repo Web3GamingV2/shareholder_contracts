@@ -17,6 +17,8 @@ import { MultiSigWalletAddr } from "./address.sol";
     PAT Proxy deployed to: 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1
     PAT Implementation deployed to: 0xd030106997dBD7c499fF46220Cd268a6E45b3a66
     PAT Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+ * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "isAllowedRecipient(address)(bool)"
+ * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "mintedSupply()"
  */
 
 contract PATDeployerScript is Script {
