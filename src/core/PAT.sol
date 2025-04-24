@@ -95,7 +95,6 @@ contract PAT is
         }
         
         // 检查单次铸造上限
-        // TODO: 单次上限没拦住
         if (_amount > maximumMintAmount) {
             revert SBNGC_PATToken_MintAmountTooLarge(_amount, maximumMintAmount);
         }
