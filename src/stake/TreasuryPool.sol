@@ -17,7 +17,7 @@ import "../core/PATStorage.sol";
 
 /**
  * @title TreasuryPool
- * @dev 资金池合约，负责管理USDT和PAT代币，以及计算利息 通过这个池子把 USDT 转入 polygon 网络 但是赎回逻辑需要从 tron 那边做
+ * @dev 资金池合约，负责管理USDT和PAT代币，以及计算利息 通过这个池子把 USDT 转入 polygon 网络 但是赎回逻辑需要从 tron 那边做 (通过RedeemManager链接tron)
  */
 contract TreasuryPool is
     Initializable,

@@ -132,7 +132,6 @@ abstract contract InvestorSalePoolStorage is Initializable {
         usdt = IERC20(_usdt);
         treasuryPool = ITreasuryPool(_treasuryPool);
         vestingFactory = IVestingFactory(_vestingFactory);
-
         treasuryRatioBps = _treasuryRatioBps;
         multiSigWallet = _multiSigWallet;
         saleActive = false;

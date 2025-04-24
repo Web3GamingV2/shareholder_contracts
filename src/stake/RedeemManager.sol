@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import "../interface/ITreasuryPool.sol";
 import "../core/PATStorage.sol";
@@ -34,6 +35,7 @@ contract RedeemManager is
     OwnableUpgradeable,
     UUPSUpgradeable,
     ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
     IRedeemManager
 {
 
@@ -114,7 +116,7 @@ contract RedeemManager is
         __Ownable_init(_owner);
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();
-        
+        __Pausable_init();
         treasuryPool = _treasuryPool;
     }
     
@@ -132,7 +134,7 @@ contract RedeemManager is
     * @param _requestId 赎回请求ID
     * @param _tronAddress 用户的TRON地址
     */
-    function initiateCrossChainRedemption(bytes32 _requestId, string calldata _tronAddress) external onlyOwner nonReentrant {
+    function initiateCrossChainRedemption(bytes32 _requestId, string calldata _tronAddress) external onlyOwner whenNotPaused() nonReentrant {
 
         LockedRedemption storage redemption = lockedRedemptions[_requestId];
         require(redemption.user != address(0), "Invalid request ID");
@@ -173,7 +175,7 @@ contract RedeemManager is
         uint256 _interestPortion,
         PATStorage.PoolType _userType,
         address _sourcePool
-    ) external onlyTreasuryPool returns (bytes32) {
+    ) external onlyTreasuryPool whenNotPaused() returns (bytes32) {
         // 生成唯一请求ID
         bytes32 requestId = keccak256(abi.encodePacked(_user, _patAmount, _usdtAmount, block.timestamp, requestNonce));
         requestNonce++;
@@ -209,7 +211,7 @@ contract RedeemManager is
      * @param _requestId 请求ID
      * @param _txHash TRON链上的交易哈希（可选）
      */
-    function confirmRedemptionSuccess(bytes32 _requestId, string calldata _txHash) external onlyOwner nonReentrant {
+    function confirmRedemptionSuccess(bytes32 _requestId, string calldata _txHash) external onlyOwner whenNotPaused() nonReentrant {
         LockedRedemption storage redemption = lockedRedemptions[_requestId];
         require(redemption.user != address(0), "Invalid request ID");
         require(redemption.status == RedemptionStatus.PENDING, "Request not pending");
@@ -234,7 +236,7 @@ contract RedeemManager is
      * @dev 确认赎回失败 - 由业务系统回调
      * @param _requestId 请求ID
      */
-    function confirmRedemptionFailure(bytes32 _requestId) external onlyOwner nonReentrant {
+    function confirmRedemptionFailure(bytes32 _requestId) external onlyOwner whenNotPaused() nonReentrant {
         LockedRedemption storage redemption = lockedRedemptions[_requestId];
         require(redemption.user != address(0), "Invalid request ID");
         require(redemption.status == RedemptionStatus.PENDING, "Request not pending");
@@ -303,5 +305,12 @@ contract RedeemManager is
     }
     
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }  
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }
