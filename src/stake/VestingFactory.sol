@@ -162,7 +162,7 @@ contract VestingFactory is
             isEarlyRedeemed: false
         });
         
-        // 检查多签账户中是否有足够的代币
+        // 检查用户是否有足够的代币
         uint256 userBalance = patToken.balanceOf(_beneficiary);
         uint256 userAllowance = patToken.allowance(_beneficiary, address(this));
         require(userBalance >= _amount, "Insufficient token balance");

@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {Script, console} from "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {PAT} from "../src/core/PAT.sol"; 
-
+import { MultiSigWalletAddr } from "./multiSigWallet.sol";
 
 /**
  * @title PATDeployer
@@ -27,12 +27,11 @@ contract PATDeployerScript is Script {
         address deployerAddress = vm.addr(deployerPrivateKey);
         console.log("Deploying contracts with the account: %s", deployerAddress);
         address initialOwner = deployerAddress; // 或者其他指定的owner地址
-        address multiSigWallet = 0xDCF27feBde41A0CB7328992bEA630D5B014c5932; // 多签钱包地址
 
         bytes memory initData = abi.encodeWithSelector(
             PAT.initialize.selector,
             initialOwner,
-            multiSigWallet
+            MultiSigWalletAddr
         );
 
         vm.startBroadcast(deployerPrivateKey);
