@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {Script, console} from "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {VestingFactory} from "../src/stake/VestingFactory.sol";
-import { MultiSigWalletAddr, PATAddr } from "./multiSigWallet.sol";
+import { MultiSigWalletAddr, PATAddr } from "./address.sol";
 /**
  * @title VestingFactoryDeployerScript
  * @dev 部署 VestingFactory 合约的 UUPS 代理脚本
@@ -17,6 +17,24 @@ import { MultiSigWalletAddr, PATAddr } from "./multiSigWallet.sol";
  * export MULTISIG_ADDRESS=<your_multisig_address>
  * forge script script/VestingFactoryDeployer.s.sol:VestingFactoryDeployerScript --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key $WEB3GAMING_ETHERSCAN_API_KEY
  */
+
+/**
+== Return ==
+0: address 0x4B860eA39Af4b41EAd50e3f6531eBbc482DA7aF5
+
+== Logs ==
+  Deploying contracts with the account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+  Deploying VestingFactory with account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+    PAT Token: 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1
+    Investor Sale Pool: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+    MultiSig Wallet: 0xDCF27feBde41A0CB7328992bEA630D5B014c5932
+    Initial Owner: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+    Early Redemption Fee (Bps): 0
+  VestingFactory Proxy deployed to: 0x4B860eA39Af4b41EAd50e3f6531eBbc482DA7aF5
+  VestingFactory Implementation deployed to: 0xBa87455d21b049641C1Df9Cb1007D2dfA51E920B
+  VestingFactory Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+ */
+
 contract VestingFactoryDeployerScript is Script {
     function run() external returns (address) {
         // --- 配置 ---

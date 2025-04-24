@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {Script, console} from "forge-std/Script.sol";
 import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import {PAT} from "../src/core/PAT.sol"; 
-import { MultiSigWalletAddr } from "./multiSigWallet.sol";
+import { MultiSigWalletAddr } from "./address.sol";
 
 /**
  * @title PATDeployer
