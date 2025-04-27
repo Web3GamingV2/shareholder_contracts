@@ -240,9 +240,9 @@ contract InvestorSalePool is
             totalUserInvestment[_user] += _usdtAmount;
             // 更新销售统计
             totalUsdtRaised += _usdtAmount;
-            totalPatSold += patAmount;
+            totalPatSold += _patAmount;
 
-            emit PurchaseMade(_user, _usdtAmount, patAmount, tier, vestingWallet);
+            emit PurchaseMade(_user, _usdtAmount, _patAmount, _tier, _vestingWallet);
     }
 
     /**

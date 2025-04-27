@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "../interface/IPAX.sol";
 import "../interface/IPAT.sol";
-import "../interface/IPATLayerZeroBridge.sol";
 import "../interface/ITreasuryPool.sol";
 import "../core/PATStorage.sol";
 
@@ -40,7 +39,6 @@ abstract contract TreasuryPoolStorage is Initializable {
     IPATInterface public patCoin;  // PAT代币
     IPAXInterface public paxCoin;  // PAX代币
     IERC20 public usdtCoin;        // USDT代币
-    IPATLayerZeroBridge public polygonConnector; // Polygon跨链连接器
     address public multiSigWallet; // 多签钱包地址
     // 在合约定义中添加 RedeemManager 地址
     address public redeemManager;
