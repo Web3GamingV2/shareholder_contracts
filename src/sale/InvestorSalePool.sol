@@ -226,7 +226,7 @@ contract InvestorSalePool is
         whenSaleActive {
             address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
             (address _user, uint256 _patAmount, uint256 _usdtAmount, uint8 _tier, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
-              // 记录购买信息
+            // 记录购买信息
             userPurchases[_user].push(Purchase({
                 usdtAmount: _usdtAmount,
                 patAmount: _patAmount,
