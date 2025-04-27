@@ -8,6 +8,7 @@ import "../interface/IPAT.sol";
 import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
 import "../interface/IRedeemManager.sol";
+import "../interface/ISubscriptionSalePool.sol";
 
 abstract contract InvestorSalePoolStorage is Initializable {
 
@@ -21,6 +22,7 @@ abstract contract InvestorSalePoolStorage is Initializable {
     IERC20 public usdt;                    // USDT代币
     ITreasuryPool public treasuryPool;     // 资金池
     IVestingFactory public vestingFactory; // 锁仓工厂合约
+    ISubscriptionSalePool public subscriptionSalePool; // 申购销售池合约
     
     // 销售配置
     uint256 public treasuryRatioBps;       // 转入赎回池的比例（基点）
@@ -120,18 +122,29 @@ abstract contract InvestorSalePoolStorage is Initializable {
         uint256 usdtAmount
     );
 
+    // 新增的申购请求事件
+    event SubscriptionRequested(
+        address indexed user,
+        uint256 patAmount,
+        uint256 usdtAmount,
+        uint8 tier,
+        uint256 expiryTimestamp
+    );
+
     function __InvestorSalePoolStorage_init(
         address _patCoin,
         address _usdt,
         address _treasuryPool,
         address _vestingFactory,
         uint256 _treasuryRatioBps,
-        address _multiSigWallet
+        address _multiSigWallet,
+        address _subscriptionSalePool
     ) internal initializer {
         patCoin = IPATInterface(_patCoin);
         usdt = IERC20(_usdt);
         treasuryPool = ITreasuryPool(_treasuryPool);
         vestingFactory = IVestingFactory(_vestingFactory);
+        subscriptionSalePool = ISubscriptionSalePool(_subscriptionSalePool);
         treasuryRatioBps = _treasuryRatioBps;
         multiSigWallet = _multiSigWallet;
         saleActive = false;

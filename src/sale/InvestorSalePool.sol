@@ -51,6 +51,7 @@ contract InvestorSalePool is
         address _treasuryPool,
         address _vestingFactory,
         address _multiSigWallet,
+        address _subscriptionSalePool,
         uint256 _treasuryRatioBps // 转入赎回池的比例（基点）默认是 1
     ) public initializer {
         __Ownable_init(_owner);
@@ -63,7 +64,8 @@ contract InvestorSalePool is
             _treasuryPool,
             _vestingFactory,
             _treasuryRatioBps,
-            _multiSigWallet
+            _multiSigWallet,
+            _subscriptionSalePool
         );
         __TierConfig_init();
     }
@@ -161,6 +163,86 @@ contract InvestorSalePool is
         // 计算PAT数量：USDT金额 / 价格
         // 注意：价格单位为USDT/PAT，精度为1e18
         return (_usdtAmount * 1e18) / tierConfigs[_tier].price;
+    }
+
+    /**
+     * @dev 发起一个新的PAT代币申购请求
+     * @param _usdtAmount 用户希望用于申购的USDT金额
+     * @return expiryTimestamp 申购请求的过期时间戳
+     */
+    function createSubscriptionRequest(uint256 _usdtAmount)
+        external
+        nonReentrant
+        whenNotPaused
+        whenSaleActive
+        returns (uint256 expiryTimestamp)
+    {
+        require(_usdtAmount > 0, "USDT amount must be positive");
+        address _subscriber = msg.sender; // 申购者是调用者
+
+        // 1. 确定投资者级别
+        uint8 tier = getUserTier(_usdtAmount);
+
+        // 2. 计算PAT数量
+        uint256 patAmount = calculatePatAmount(_usdtAmount, tier);
+        require(patAmount > 0, "Calculated PAT amount is zero");
+
+        // 3. 检查本合约是否有足够的PAT代币用于本次申购
+        uint256 contractPatBalance = patCoin.balanceOf(address(this));
+        require(contractPatBalance >= patAmount, "Insufficient PAT balance in InvestorSalePool");
+        
+        address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
+        require(subscriptionSalePoolAddress != address(0), "SubscriptionSalePool address is zero"); // 确保地址不为零地址
+        require(patCoin.allowance(address(this), subscriptionSalePoolAddress) >= patAmount, "Insufficient allowance"); // 确保合约有足够的 PAT 授权
+
+        // 4. 授权 SubscriptionSalePool 合约转移 PAT
+        patCoin.approve(subscriptionSalePoolAddress, patAmount);
+
+        // 5. 调用 SubscriptionSalePool 创建申购记录
+        expiryTimestamp = ISubscriptionSalePool(subscriptionSalePoolAddress).createSubscription(
+            _subscriber,
+            patAmount,
+            _usdtAmount,
+            tier
+        );
+
+        // 6. 重置授权 (可选，但推荐)
+        patCoin.approve(subscriptionSalePoolAddress, 0);
+
+        // 7. 触发事件
+        emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, tier, expiryTimestamp);
+
+        // 注意：此函数不处理USDT。USDT的接收和处理将在 SubscriptionSalePool 的 confirmSubscription 函数中进行。
+    }
+
+    /**
+     * 用户在L2完成USDT交付后形成一条购买记录
+     * ccip 调用此方法 (L2 Sender)
+     * 成功后chainlinkFC调用链下生成购买PDF用户决定是否IPFS
+     */
+    function confirmSubscriptionRequest(uint256 _subscriptionId) external
+        nonReentrant
+        whenNotPaused
+        whenSaleActive {
+            address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
+            (address _user, uint256 _patAmount, uint256 _usdtAmount, uint8 _tier, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
+              // 记录购买信息
+            userPurchases[_user].push(Purchase({
+                usdtAmount: _usdtAmount,
+                patAmount: _patAmount,
+                tier: _tier,
+                timestamp: uint64(block.timestamp),
+                vestingWallet: _vestingWallet,
+                isRedeemed: false
+            }));
+
+            // 更新用户总投资金额
+            totalUserInvestment[_user] += _usdtAmount;
+            // 更新销售统计
+            totalUsdtRaised += _usdtAmount;
+            totalPatSold += patAmount;
+
+            emit PurchaseMade(_user, _usdtAmount, patAmount, tier, vestingWallet);
     }
 
     /**
