@@ -254,7 +254,7 @@ contract SubscriptionSalePool is
     }
 
     // 允许管理员提取意外发送到合约的PAT (例如清理失败的)
-     function withdrawStuckPAT(address _to, uint256 _amount) external onlyOwner() {
+    function withdrawStuckPAT(address _to, uint256 _amount) external onlyOwner() {
         require(_to != address(0), "Invalid recipient");
         uint256 balance = patToken.balanceOf(address(this));
         require(_amount <= balance, "Insufficient balance");
