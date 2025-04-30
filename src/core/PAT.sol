@@ -58,6 +58,10 @@ contract PAT is
         return 6;
     }
 
+    function version() external virtual pure returns (uint256) {
+        return 1;
+    }
+
     function initialize(address _owner, address _multiSigWallet) initializer public {
         require(_owner != address(0), SBNGC_PATToken_ImproperlyInitialized());
         require(_multiSigWallet!= address(0), SBNGC_PATToken_ImproperlyInitialized());

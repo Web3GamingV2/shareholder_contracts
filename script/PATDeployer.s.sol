@@ -19,6 +19,7 @@ import { MultiSigWalletAddr } from "./address.sol";
     PAT Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
  * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "isAllowedRecipient(address)(bool)"
  * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "mintedSupply()"
+ * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "nextMintTime()(uint256)"
  */
 
 contract PATDeployerScript is Script {
