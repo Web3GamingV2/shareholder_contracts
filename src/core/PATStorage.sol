@@ -13,7 +13,7 @@ abstract contract PATStorage is Initializable {
     }
 
     /// @dev 最小铸造时间间隔
-    uint256 public constant MIN_MINT_INTERVAL = 1 days; 
+    uint256 public constant MIN_MINT_INTERVAL = 1 minutes; 
 
     /// @dev The total supply of SBNG. 1亿
     uint256 public constant MAX_SUPPLY = 100_000_000 * 10 ** 6;
