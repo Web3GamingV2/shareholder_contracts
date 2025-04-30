@@ -38,4 +38,6 @@ interface IPATInterface is IERC20 {
 
     function setAllowedRecipient(address minter, bool isAllowed) external;
     function isAllowedRecipient(address minter) external view returns (bool);
+
+    function nextMintTime() external view returns (uint256);
 }

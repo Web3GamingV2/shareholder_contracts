@@ -155,6 +155,13 @@ contract PAT is
         return allowedRecipients[_recipient]; 
     }
 
+    // 新增函数实现：获取下一次可以 mint 的时间
+    function nextMintTime() external view returns (uint256) {
+        // 如果从未 mint 过 (lastMintTime == 0)，则返回 MIN_MINT_INTERVAL
+        // 否则返回上次 mint 时间 + 最小间隔
+        return lastMintTime + MIN_MINT_INTERVAL;
+    }
+
      // 添加 UUPS 所需的授权升级函数
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {
         // 可以添加额外的升级条件
