@@ -174,7 +174,7 @@ contract InvestorSalePool is
      * @param _usdtAmount 用户希望用于申购的USDT金额
      * @return expiryTimestamp 申购请求的过期时间戳
      */
-    function createSubscriptionRequest(uint256 _usdtAmount)
+    function createSubscriptionRequest(address _user, uint256 _usdtAmount)
         external
         nonReentrant
         whenNotPaused
@@ -182,7 +182,8 @@ contract InvestorSalePool is
         returns (uint256 expiryTimestamp)
     {
         require(_usdtAmount > 0, "USDT amount must be positive");
-        address _subscriber = msg.sender; // 申购者是调用者
+        require(_user != address(0), "Invalid user address");
+        address _subscriber = _user; // 申购者是调用者
 
         // 1. 确定投资者级别
         uint8 tier = getUserTier(_usdtAmount);
