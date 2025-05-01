@@ -137,14 +137,14 @@ abstract contract InvestorSalePoolStorage is Initializable {
         address _treasuryPool,
         address _vestingFactory,
         uint256 _treasuryRatioBps,
-        address _multiSigWallet,
-        address _subscriptionSalePool
+        address _multiSigWallet
+        // address _subscriptionSalePool
     ) internal initializer {
         patCoin = IPATInterface(_patCoin);
         usdt = IERC20(_usdt);
         treasuryPool = ITreasuryPool(_treasuryPool);
         vestingFactory = IVestingFactory(_vestingFactory);
-        subscriptionSalePool = ISubscriptionSalePool(_subscriptionSalePool);
+        // subscriptionSalePool = ISubscriptionSalePool(_subscriptionSalePool);
         treasuryRatioBps = _treasuryRatioBps;
         multiSigWallet = _multiSigWallet;
         saleActive = false;

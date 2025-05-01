@@ -51,7 +51,7 @@ contract InvestorSalePool is
         address _treasuryPool,
         address _vestingFactory,
         address _multiSigWallet,
-        address _subscriptionSalePool,
+        // address _subscriptionSalePool,
         uint256 _treasuryRatioBps // 转入赎回池的比例（基点）默认是 1
     ) public initializer {
         __Ownable_init(_owner);
@@ -64,8 +64,8 @@ contract InvestorSalePool is
             _treasuryPool,
             _vestingFactory,
             _treasuryRatioBps,
-            _multiSigWallet,
-            _subscriptionSalePool
+            _multiSigWallet
+            // _subscriptionSalePool
         );
         __TierConfig_init();
     }
@@ -102,6 +102,10 @@ contract InvestorSalePool is
         });
         
         emit TierConfigUpdated(_tier, _minAmount, _maxAmount, _price, _isActive);
+    }
+
+    function version() external view virtual returns (string memory) {
+        return "1.0.0";
     }
 
      // 外部调用
@@ -421,6 +425,15 @@ contract InvestorSalePool is
         purchaseOrder.isRedeemed = false;
         
         emit RedemptionCancelled(_requestId, request.user, request.patAmount, request.usdtAmount);
+    }
+
+    function setSubscriptionSalePool(address _subscriptionSalePool) external onlyOwner {
+        require(_subscriptionSalePool!= address(0), "SubscriptionSalePool address is zero");
+        subscriptionSalePool = ISubscriptionSalePool(_subscriptionSalePool);
+    }
+
+    function getSubscriptionSalePool() external view returns (address _subscriptionSalePoolAddress) {
+        return address(subscriptionSalePool);
     }
 
      /**
