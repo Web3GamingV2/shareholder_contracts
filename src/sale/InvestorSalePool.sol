@@ -423,6 +423,14 @@ contract InvestorSalePool is
         emit RedemptionCancelled(_requestId, request.user, request.patAmount, request.usdtAmount);
     }
 
+     /**
+     * @dev 获取合约中的PAT余额
+     * @return 合约中的PAT代币数量
+     */
+    function getContractPatBalance() public view returns (uint256) {
+        return patCoin.balanceOf(address(this));
+    }
+
     function _authorizeUpgrade(address newImplementation)
         internal
         override
