@@ -23,7 +23,7 @@ contract SubscriptionSalePool is
     ReentrancyGuardUpgradeable,
     UUPSUpgradeable,
     SubscriptionSalePoolStorage,
-    ISubscriptionSalePool // 实现接口
+    ISubscriptionSalePool
 {
     // --- 事件 ---
     event SubscriptionCreated(
@@ -69,6 +69,10 @@ contract SubscriptionSalePool is
             _vestingFactory,
             _subscriptionDuration
         );
+    }
+
+    function version() external view virtual returns (string memory) {
+        return "1.0.0";
     }
 
     /**
