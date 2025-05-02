@@ -5,7 +5,6 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../interface/IPAT.sol";
-// import "../interface/IVestingFactory.sol";
 
 abstract contract SubscriptionSalePoolStorage is Initializable {
     using SafeERC20 for IPATInterface;
@@ -25,12 +24,11 @@ abstract contract SubscriptionSalePoolStorage is Initializable {
         address subscriber;         // 申购人地址
         uint256 patAmount;          // 申购的PAT数量
         uint256 usdtAmount;         // 需要支付的USDT数量
-        uint8 tier;                 // 对应的投资者等级
-        uint64 creationTimestamp;   // 创建时间戳
-        uint64 expiryTimestamp;     // 过期时间戳
-        SubscriptionStatus status;  // 申购状态
+    }
+
+    struct SubscriptionMmutable {
+        uint8 status;  // 申购状态
         address vestingWallet;      // 确认后创建的锁仓钱包地址 (可选)
-        bool usdtReceived;          // 是否已收到USDT
     }
 
     // --- 状态变量 ---
@@ -48,12 +46,10 @@ abstract contract SubscriptionSalePoolStorage is Initializable {
 
     // 申购ID到申购记录的映射
     mapping(uint256 => Subscription) public subscriptions;
+    mapping(uint256 => SubscriptionMmutable) public subscriptionsMmutable;
 
     // 用户地址到其所有申购记录ID列表的映射
     mapping(address => uint256[]) public userSubscriptionIds;
-
-    // 用户地址到其当前待处理申购ID的映射 (可选，用于限制一个用户同时只有一个待处理申购)
-    // mapping(address => uint256) public pendingSubscriptionIdByUser;
 
     // --- 初始化 ---
     function __SubscriptionSalePoolStorage_init(

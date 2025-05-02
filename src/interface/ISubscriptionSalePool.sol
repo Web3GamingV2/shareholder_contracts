@@ -13,21 +13,18 @@ interface ISubscriptionSalePool {
      * @param _subscriber 申购人的地址
      * @param _patAmount 申购的PAT代币数量
      * @param _usdtAmount 申购需要支付的USDT数量
-     * @param _tier 申购对应的投资者等级
-     * @return expiryTimestamp 申购记录的过期时间戳
+     * @return expireTimestamp 申购记录的过期时间戳
      */
     function createSubscription(
         address _subscriber,
         uint256 _patAmount,
-        uint256 _usdtAmount,
-        uint8 _tier
-    ) external returns (uint256 expiryTimestamp);
+        uint256 _usdtAmount
+    ) external returns (uint256 expireTimestamp);
 
     function confirmSubscription(uint256 _subscriptionId) external returns (
         address _subscriber,
         uint256 _patAmount,
         uint256 _usdtAmount,
-        uint8 _tier,
         address _vestingWallet
     );
 

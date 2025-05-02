@@ -8,7 +8,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./SubscriptionSalePoolStorage.sol";
 import "../interface/ISubscriptionSalePool.sol"; // 引入接口定义
-// import "../core/PATStorage.sol"; // 引入 PoolType
 import "../interface/IVestingFactory.sol";
 
 
@@ -30,10 +29,9 @@ contract SubscriptionSalePool is
         uint256 indexed subscriptionId,
         address indexed subscriber,
         uint256 patAmount,
-        uint256 usdtAmount,
-        uint8 tier,
-        uint64 expiryTimestamp
+        uint256 usdtAmount
     );
+
     event SubscriptionConfirmed(uint256 indexed subscriptionId, address indexed subscriber, address vestingWallet);
     event SubscriptionExpired(uint256 indexed subscriptionId, address indexed subscriber);
     event SubscriptionCancelled(uint256 indexed subscriptionId, address indexed subscriber);
@@ -80,100 +78,82 @@ contract SubscriptionSalePool is
      * @param _subscriber 申购人地址
      * @param _patAmount 申购的PAT数量
      * @param _usdtAmount 需要支付的USDT数量
-     * @param _tier 对应的投资者等级
-     * @return expiryTimestamp 申购记录的过期时间戳
+     * @return expireTimestamp 申购记录的过期时间戳
      */
     function createSubscription(
         address _subscriber,
         uint256 _patAmount,
-        uint256 _usdtAmount,
-        uint8 _tier
+        uint256 _usdtAmount
     )
         external
         override
         onlyInvestorSalePool
         whenNotPaused
         nonReentrant
-        returns (uint256 expiryTimestamp)
+        returns (uint256 expireTimestamp)
     {
-        require(_subscriber != address(0), "Invalid subscriber address");
-        require(_patAmount > 0, "PAT amount must be positive");
-        require(_usdtAmount > 0, "USDT amount must be positive");
-        // 可以添加检查，例如一个用户是否已有待处理的申购
-        // require(pendingSubscriptionIdByUser[_subscriber] == 0, "User already has a pending subscription");
-
-        // 从 InvestorSalePool 合约转移 PAT 到本合约
-        // InvestorSalePool 需要先 approve 本合约地址
-        patToken.transferFrom(msg.sender, address(this), _patAmount);
+       // 只需要一个 require 来检查所有的前置条件
+        require(_subscriber != address(0) && _patAmount > 0 && _usdtAmount > 0, "Invalid input values");
 
         uint256 currentId = nextSubscriptionId;
-        uint64 creationTime = uint64(block.timestamp);
-        uint64 expiryTime = creationTime + uint64(subscriptionDuration);
 
+        // 只进行一次结构体初始化，减少存储写操作
         Subscription memory newSubscription = Subscription({
             id: currentId,
             subscriber: _subscriber,
             patAmount: _patAmount,
-            usdtAmount: _usdtAmount,
-            tier: _tier,
-            creationTimestamp: creationTime,
-            expiryTimestamp: expiryTime,
-            status: SubscriptionStatus.PENDING,
-            vestingWallet: address(0), // 初始为空
-            usdtReceived: false
+            usdtAmount: _usdtAmount
         });
 
+        SubscriptionMmutable memory newSubscriptionMmutable = SubscriptionMmutable({
+            status: uint8(SubscriptionStatus.PENDING),
+            vestingWallet: address(0)
+        });
+        // 写入存储
         subscriptions[currentId] = newSubscription;
+        subscriptionsMmutable[currentId] = newSubscriptionMmutable;
         userSubscriptionIds[_subscriber].push(currentId);
-        // pendingSubscriptionIdByUser[_subscriber] = currentId; // 如果需要限制
-
+        
         nextSubscriptionId++;
 
-        emit SubscriptionCreated(currentId, _subscriber, _patAmount, _usdtAmount, _tier, expiryTime);
+        // 触发事件
+        emit SubscriptionCreated(currentId, _subscriber, _patAmount, _usdtAmount);
 
-        return uint256(expiryTime);
+        return uint256(block.timestamp) + subscriptionDuration;
     }
 
     /**
      * @dev 用户取消未付款的申购
      * @param _subscriptionId 要取消的申购ID
      */
-    function cancelSubscription(uint256 _subscriptionId) external whenNotPaused nonReentrant {
+    function cancelSubscription(uint256 _subscriptionId) external onlyInvestorSalePool() whenNotPaused nonReentrant {
         Subscription storage sub = subscriptions[_subscriptionId];
-
-        require(sub.id != 0, "Subscription not found");
-        require(sub.subscriber == msg.sender, "Caller is not the subscriber");
-        require(sub.status == SubscriptionStatus.PENDING, "Subscription not pending");
-        // 过期后不能主动取消，应由清理机制处理
-        require(block.timestamp <= sub.expiryTimestamp, "Subscription expired, cannot cancel");
+        SubscriptionMmutable storage subMmutable = subscriptionsMmutable[_subscriptionId];
+        require(sub.id != 0 && subMmutable.status == uint8( SubscriptionStatus.PENDING), "Subscription not found");
 
         // 将预存的PAT退还给 InvestorSalePool
         patToken.transfer(investorSalePoolAddress, sub.patAmount);
 
         // 更新状态
-        sub.status = SubscriptionStatus.CANCELLED;
-        // delete pendingSubscriptionIdByUser[msg.sender]; // 如果使用了限制
+        subMmutable.status = uint8(SubscriptionStatus.CANCELLED);
 
-        emit SubscriptionCancelled(_subscriptionId, msg.sender);
+        emit SubscriptionCancelled(_subscriptionId, sub.subscriber);
     }
 
     /**
      * @dev 清理过期的申购记录 (任何人可以调用，或由 Keeper 调用)
      * @param _subscriptionId 要清理的申购ID
      */
-    function cleanupExpiredSubscription(uint256 _subscriptionId) external whenNotPaused nonReentrant {
-         Subscription storage sub = subscriptions[_subscriptionId];
-
-        require(sub.id != 0, "Subscription not found");
-        require(sub.status == SubscriptionStatus.PENDING, "Subscription not pending or already handled");
-        require(block.timestamp > sub.expiryTimestamp, "Subscription not expired yet");
+    function cleanupExpiredSubscription(uint256 _subscriptionId) external onlyInvestorSalePool() whenNotPaused nonReentrant {
+        Subscription storage sub = subscriptions[_subscriptionId];
+        SubscriptionMmutable storage subMmutable = subscriptionsMmutable[_subscriptionId];
+        require(sub.id != 0 && subMmutable.status == uint8(SubscriptionStatus.PENDING), "Subscription not found");
 
         // 将预存的PAT退还给 InvestorSalePool
         patToken.transfer(investorSalePoolAddress, sub.patAmount);
 
         // 更新状态
-        sub.status = SubscriptionStatus.EXPIRED;
-        // delete pendingSubscriptionIdByUser[sub.subscriber]; // 如果使用了限制
+        subMmutable.status = uint8(SubscriptionStatus.EXPIRED);
 
         emit SubscriptionExpired(_subscriptionId, sub.subscriber);
     }
@@ -187,50 +167,37 @@ contract SubscriptionSalePool is
         address _subscriber,
         uint256 _patAmount,
         uint256 _usdtAmount,
-        uint8 _tier,
         address _vestingWallet
     ) {
         Subscription storage sub = subscriptions[_subscriptionId];
-
-        require(sub.id != 0, "Subscription not found");
-        require(sub.subscriber == msg.sender, "Caller is not the subscriber");
-        require(sub.status == SubscriptionStatus.PENDING, "Subscription not pending");
-        require(block.timestamp <= sub.expiryTimestamp, "Subscription expired");
-        require(!sub.usdtReceived, "USDT already received for this subscription");
-
-        // 2. 标记 USDT 已收到
-        sub.usdtReceived = true;
-        emit SubscriptionUsdtReceived(_subscriptionId, msg.sender, sub.usdtAmount);
+        SubscriptionMmutable storage subMmutable = subscriptionsMmutable[_subscriptionId];
+        require(sub.id != 0 && subMmutable.status == uint8(SubscriptionStatus.PENDING), "Subscription not found");
+        emit SubscriptionUsdtReceived(_subscriptionId, _subscriber, sub.patAmount);
 
         // 3. 创建锁仓合约
-        // 注意：vestingFactory 的 createVestingWallet 函数签名需要匹配
-        // 这里假设了一个简单的签名，实际需要根据 VestingFactory 合约调整
+        // 注意：vestingFactory 的 createVestingWallet 函数签名需要匹配整
         uint64 currentVestingStartTime = uint64(block.timestamp);
         address newVestingWallet = IVestingFactory(vestingFactory).createVestingWallet(
             sub.subscriber,
             sub.patAmount,
             currentVestingStartTime
-            // 可能需要传入 tier 或其他参数来确定锁仓计划
         );
         require(newVestingWallet != address(0), "Vesting wallet creation failed");
 
         // 4. 将 PAT 转入锁仓合约
-        // 此时 PAT 应该在本合约地址 (在 createSubscription 时转入)
         patToken.transfer(newVestingWallet, sub.patAmount);
 
         // 5. 更新申购状态和信息
-        sub.vestingWallet = newVestingWallet;
-        sub.status = SubscriptionStatus.CONFIRMED;
-        // delete pendingSubscriptionIdByUser[msg.sender]; // 如果使用了限制
+        subMmutable.vestingWallet = newVestingWallet;
+        subMmutable.status = uint8(SubscriptionStatus.CONFIRMED);
 
-        emit SubscriptionConfirmed(_subscriptionId, msg.sender, newVestingWallet);
+        emit SubscriptionConfirmed(_subscriptionId, _subscriber, newVestingWallet);
 
         return (
             sub.subscriber,
             sub.patAmount,
             sub.usdtAmount,
-            sub.tier,
-            sub.vestingWallet
+            subMmutable.vestingWallet
         );
     }
 

@@ -181,9 +181,9 @@ contract InvestorSalePool is
         whenSaleActive
         returns (uint256 expiryTimestamp)
     {
-        require(_usdtAmount > 0, "USDT amount must be positive");
-        require(_user != address(0), "Invalid user address");
+        address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
         address _subscriber = _user; // 申购者是调用者
+        require(_usdtAmount > 0 && _user != address(0) && subscriptionSalePoolAddress != address(0), "USDT amount must be positive");
 
         // 1. 确定投资者级别
         uint8 tier = getUserTier(_usdtAmount);
@@ -195,33 +195,21 @@ contract InvestorSalePool is
         // 3. 检查本合约是否有足够的PAT代币用于本次申购
         uint256 contractPatBalance = patCoin.balanceOf(address(this));
         require(contractPatBalance >= patAmount, "Insufficient PAT balance in InvestorSalePool");
-        
-        address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
-        require(subscriptionSalePoolAddress != address(0), "SubscriptionSalePool address is zero"); // 确保地址不为零地址
-        require(patCoin.allowance(address(this), subscriptionSalePoolAddress) >= patAmount, "Insufficient allowance"); // 确保合约有足够的 PAT 授权
 
         // 检查用户是否有足够的 USDT 余额
         uint256 userUsdtBalance = usdt.balanceOf(_user);
         require(userUsdtBalance >= _usdtAmount, "Insufficient USDT balance");
 
-        // 4. 授权 SubscriptionSalePool 合约转移 PAT
-        patCoin.approve(subscriptionSalePoolAddress, patAmount);
-
+        patCoin.transfer(subscriptionSalePoolAddress, patAmount);
         // 5. 调用 SubscriptionSalePool 创建申购记录
         expiryTimestamp = ISubscriptionSalePool(subscriptionSalePoolAddress).createSubscription(
             _subscriber,
             patAmount,
-            _usdtAmount,
-            tier
+            _usdtAmount
         );
-
-        // 6. 重置授权 (可选，但推荐)
-        patCoin.approve(subscriptionSalePoolAddress, 0);
 
         // 7. 触发事件
         emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, tier, expiryTimestamp);
-
-        // 注意：此函数不处理USDT。USDT的接收和处理将在 SubscriptionSalePool 的 confirmSubscription 函数中进行。
     }
 
     /**
@@ -234,8 +222,9 @@ contract InvestorSalePool is
         whenNotPaused
         whenSaleActive {
             address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
-            (address _user, uint256 _patAmount, uint256 _usdtAmount, uint8 _tier, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
-            // 记录购买信息
+            (address _user, uint256 _patAmount, uint256 _usdtAmount, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
+            uint8 _tier = getUserTier(_usdtAmount);
+            // TODO 记录购买信息 Gas 优化
             userPurchases[_user].push(Purchase({
                 usdtAmount: _usdtAmount,
                 patAmount: _patAmount,
