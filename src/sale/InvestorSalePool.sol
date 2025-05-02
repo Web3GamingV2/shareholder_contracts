@@ -200,6 +200,10 @@ contract InvestorSalePool is
         require(subscriptionSalePoolAddress != address(0), "SubscriptionSalePool address is zero"); // 确保地址不为零地址
         require(patCoin.allowance(address(this), subscriptionSalePoolAddress) >= patAmount, "Insufficient allowance"); // 确保合约有足够的 PAT 授权
 
+        // 检查用户是否有足够的 USDT 余额
+        uint256 userUsdtBalance = usdt.balanceOf(_user);
+        require(userUsdtBalance >= _usdtAmount, "Insufficient USDT balance");
+
         // 4. 授权 SubscriptionSalePool 合约转移 PAT
         patCoin.approve(subscriptionSalePoolAddress, patAmount);
 
