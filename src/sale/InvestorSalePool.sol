@@ -449,7 +449,9 @@ contract InvestorSalePool is
         internal
         override
         onlyOwner
-    {}
+    {
+        // 在此处添加任何额外的授权逻辑
+    }
 
     function pause() external onlyOwner {
         _pause();
