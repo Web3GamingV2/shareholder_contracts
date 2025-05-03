@@ -56,7 +56,6 @@ abstract contract InvestorSalePoolStorage is Initializable {
     struct Purchase {
         uint256 usdtAmount;                // USDT金额
         uint256 patAmount;                 // PAT金额
-        uint8 tier;                        // 投资者级别
         uint64 timestamp;                  // 时间戳
         address vestingWallet;             // 锁仓钱包地址
         bool isRedeemed;                   // 是否已赎回
@@ -70,11 +69,10 @@ abstract contract InvestorSalePoolStorage is Initializable {
     uint256 public totalPatSold;           // 总销售PAT
     
     // 事件
-    event PurchaseMade(
+    event PurchaseConfirm(
         address indexed user,
         uint256 usdtAmount,
         uint256 patAmount,
-        uint8 tier,
         address vestingWallet
     );
     event TierConfigUpdated(
@@ -127,7 +125,6 @@ abstract contract InvestorSalePoolStorage is Initializable {
         address indexed user,
         uint256 patAmount,
         uint256 usdtAmount,
-        uint8 tier,
         uint256 expiryTimestamp
     );
 

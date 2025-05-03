@@ -15,6 +15,7 @@ import "../interface/IVestingFactory.sol";
 import "../stake/VestingFactoryStorage.sol";
 import "./InvestorSalePoolStorage.sol";
 import "../interface/IRedeemManager.sol";
+import "../utils/calculate.sol";
 
 /**
  * @title 投资者销售池
@@ -28,6 +29,9 @@ contract InvestorSalePool is
     PausableUpgradeable,
     InvestorSalePoolStorage
 {
+
+    using Calculate for uint256;
+
       // 修饰符
     modifier onlyMultiSigOrOwner() {
         require(msg.sender == multiSigWallet || msg.sender == owner(), "Not multisig or owner");
@@ -51,7 +55,6 @@ contract InvestorSalePool is
         address _treasuryPool,
         address _vestingFactory,
         address _multiSigWallet,
-        // address _subscriptionSalePool,
         uint256 _treasuryRatioBps // 转入赎回池的比例（基点）默认是 1
     ) public initializer {
         __Ownable_init(_owner);
@@ -65,60 +68,14 @@ contract InvestorSalePool is
             _vestingFactory,
             _treasuryRatioBps,
             _multiSigWallet
-            // _subscriptionSalePool
         );
-        __TierConfig_init();
     }
 
-    // 投资人级别配置 购买价格不一样 但是最后等比赎回
-    function __TierConfig_init() internal {
-        // 初始化投资者级别配置 - 调整为1:1比例
-        // 一级投资者：50,000 - 100,000 USDT，1PAT = 1 USDT
-        _setTierConfig(1, 50000 * 1e6, 100000 * 1e6, 1e18, true);
-        // 二级投资者：10,000 - 49,999 USDT，1PAT = 1 USDT
-        _setTierConfig(2, 10000 * 1e6, 49999 * 1e6, 1e18, true);
-        // 三级投资者：5,000 - 9,999 USDT，1PAT = 1 USDT
-        _setTierConfig(3, 5000 * 1e6, 9999 * 1e6, 1e18, true);
-        // 四级投资者：1,000 - 4,999 USDT，1PAT = 1 USDT
-        _setTierConfig(4, 1000 * 1e6, 4999 * 1e6, 1e18, true);
-    }
-
-    function _setTierConfig(
-        uint8 _tier,
-        uint256 _minAmount,
-        uint256 _maxAmount,
-        uint256 _price,
-        bool _isActive
-    ) internal {
-        require(_tier > 0 && _tier <= 10, "Invalid tier");
-        require(_minAmount <= _maxAmount, "Min amount must be <= max amount");
-        require(_price > 0, "Price must be > 0");
-        
-        tierConfigs[_tier] = TierConfig({
-            minAmount: _minAmount,
-            maxAmount: _maxAmount,
-            price: _price,
-            isActive: _isActive
-        });
-        
-        emit TierConfigUpdated(_tier, _minAmount, _maxAmount, _price, _isActive);
-    }
 
     function version() external view virtual returns (string memory) {
         return "1.0.0";
     }
 
-     // 外部调用
-     function setTierConfig(
-        uint8 _tier,
-        uint256 _minAmount,
-        uint256 _maxAmount,
-        uint256 _price,
-        bool _isActive
-    ) public onlyMultiSigOrOwner whenNotPaused {
-        _setTierConfig(_tier, _minAmount, _maxAmount, _price, _isActive);
-    }
-    
     /**
      * @dev 设置转入赎回池的比例
      * @param _treasuryRatioBps 新的比例（基点）
@@ -138,43 +95,14 @@ contract InvestorSalePool is
         saleActive = _isActive;
         emit SaleStateUpdated(_isActive);
     }
-    
-    /**
-     * @dev 获取用户适用的投资者级别
-     * @param _usdtAmount USDT金额
-     * @return tier 投资者级别
-     */
-    function getUserTier(uint256 _usdtAmount) public view returns (uint8) {
-        for (uint8 i = 1; i <= 10; i++) {
-            TierConfig memory config = tierConfigs[i];
-            if (config.isActive && _usdtAmount >= config.minAmount && _usdtAmount <= config.maxAmount) {
-                return i;
-            }
-        }
-        revert("No matching tier found");
-    }
 
-    /**
-     * @dev 计算PAT数量
-     * @param _usdtAmount USDT金额
-     * @param _tier 投资者级别
-     * @return patAmount PAT数量
-     */
-    function calculatePatAmount(uint256 _usdtAmount, uint8 _tier) public view returns (uint256) {
-        require(_tier > 0 && _tier <= 10, "Invalid tier");
-        require(tierConfigs[_tier].isActive, "Tier not active");
-        
-        // 计算PAT数量：USDT金额 / 价格
-        // 注意：价格单位为USDT/PAT，精度为1e18
-        return (_usdtAmount * 1e18) / tierConfigs[_tier].price;
-    }
 
     /**
      * @dev 发起一个新的PAT代币申购请求
      * @param _usdtAmount 用户希望用于申购的USDT金额
      * @return expiryTimestamp 申购请求的过期时间戳
      */
-    function createSubscriptionRequest(address _user, uint256 _usdtAmount)
+    function createSubscriptionByUsdt(address _user, uint256 _usdtAmount)
         external
         nonReentrant
         whenNotPaused
@@ -185,11 +113,8 @@ contract InvestorSalePool is
         address _subscriber = _user; // 申购者是调用者
         require(_usdtAmount > 0 && _user != address(0) && subscriptionSalePoolAddress != address(0), "USDT amount must be positive");
 
-        // 1. 确定投资者级别
-        uint8 tier = getUserTier(_usdtAmount);
-
         // 2. 计算PAT数量
-        uint256 patAmount = calculatePatAmount(_usdtAmount, tier);
+        uint256 patAmount = Calculate.calculatePatByUsdt(_usdtAmount);
         require(patAmount > 0, "Calculated PAT amount is zero");
 
         // 3. 检查本合约是否有足够的PAT代币用于本次申购
@@ -208,8 +133,11 @@ contract InvestorSalePool is
         //     _usdtAmount
         // );
 
+        uint256 _expiryTimestamp = block.timestamp;
+
         // 7. 触发事件
-        emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, tier, expiryTimestamp);
+        emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, _expiryTimestamp);
+        return _expiryTimestamp;
     }
 
     /**
@@ -223,12 +151,10 @@ contract InvestorSalePool is
         whenSaleActive {
             address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
             (address _user, uint256 _patAmount, uint256 _usdtAmount, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
-            uint8 _tier = getUserTier(_usdtAmount);
             // TODO 记录购买信息 Gas 优化
             userPurchases[_user].push(Purchase({
                 usdtAmount: _usdtAmount,
                 patAmount: _patAmount,
-                tier: _tier,
                 timestamp: uint64(block.timestamp),
                 vestingWallet: _vestingWallet,
                 isRedeemed: false
@@ -240,69 +166,7 @@ contract InvestorSalePool is
             totalUsdtRaised += _usdtAmount;
             totalPatSold += _patAmount;
 
-            emit PurchaseMade(_user, _usdtAmount, _patAmount, _tier, _vestingWallet);
-    }
-
-    /**
-     * @dev 购买PAT代币
-     * @param _usdtAmount USDT金额 1 : 1
-     */
-    function purchase (address _user, uint256 _usdtAmount) public nonReentrant whenNotPaused() whenSaleActive()  {
-        require(_usdtAmount > 0, "Invalid PAT amount");
-        // 确定投资者级别
-        uint8 tier = getUserTier(_usdtAmount);
-
-          // 计算PAT数量
-        uint256 patAmount = calculatePatAmount(_usdtAmount, tier);
-        require(patAmount > 0, "PAT amount too small");
-        
-         // 检查合约是否有足够的PAT代币
-        uint256 contractPatBalance = patCoin.balanceOf(address(this));
-
-        require(contractPatBalance >= patAmount, "Insufficient PAT balance in contract");
-        
-         // 检查用户是否有足够的USDT
-        uint256 userUsdtBalance = usdt.balanceOf(_user);
-        require(userUsdtBalance >= _usdtAmount, "Insufficient USDT balance");
-
-        // 转移USDT到合约
-        usdt.transferFrom(_user, address(this), _usdtAmount);
-         // 计算转入赎回池的USDT金额
-        uint256 treasuryAmount = (_usdtAmount * treasuryRatioBps) / 10000;
-        
-        // 转移USDT到投资人池
-        if (treasuryAmount > 0) {
-            usdt.approve(address(treasuryPool), treasuryAmount);
-            treasuryPool.depositUSDT(PATStorage.PoolType.INVESTOR, _user, treasuryAmount, patAmount);
-            // 重置授权
-            usdt.approve(address(treasuryPool), 0);
-        }
-    
-        // 转移用户的 PAT 到锁仓钱包
-        patCoin.approve(address(vestingFactory), patAmount);
-          // 使用当前区块时间作为锁仓开始时间，确保锁仓立即开始
-        uint64 currentVestingStartTime = uint64(block.timestamp);
-        address vestingWallet = IVestingFactory(vestingFactory).createVestingWallet(_user, patAmount, currentVestingStartTime);
-        // 重置授权
-        patCoin.approve(address(vestingFactory), 0); 
-
-        // 记录购买信息
-        userPurchases[_user].push(Purchase({
-            usdtAmount: _usdtAmount,
-            patAmount: patAmount,
-            tier: tier,
-            timestamp: uint64(block.timestamp),
-            vestingWallet: vestingWallet,
-            isRedeemed: false
-        }));
-
-        // 更新用户总投资金额
-        totalUserInvestment[_user] += _usdtAmount;
-         // 更新销售统计
-        totalUsdtRaised += _usdtAmount;
-        totalPatSold += patAmount;
-
-        emit PurchaseMade(_user, _usdtAmount, patAmount, tier, vestingWallet);
+            emit PurchaseConfirm(_user, _usdtAmount, _patAmount, _vestingWallet);
     }
 
     function getUserPurchases(address _user) public view returns (Purchase[] memory) {

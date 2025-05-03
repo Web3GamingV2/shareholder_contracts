@@ -20,6 +20,18 @@ import { MultiSigWalletAddr } from "./address.sol";
  * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "isAllowedRecipient(address)(bool)"
  * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "mintedSupply()"
  * cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "nextMintTime()(uint256)"
+
+ forge script script/PATDeployer.s.sol:PATDeployerScript --rpc-url $WEB3GAMING_ARB_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key DMUEFJ91EEYGRDE64MQZU6IQZD3ASHINUY
+ 
+== Return ==
+0: address 0x277e59F7eFB271Ee7b0D35291bD66f04366Bca12
+
+== Logs ==
+  Deploying contracts with the account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+  PAT Proxy deployed to: 0x277e59F7eFB271Ee7b0D35291bD66f04366Bca12
+  PAT Implementation deployed to: 0x3A8628586a28470aAB10B2937e540F741B8B7A0a
+  PAT Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+
  */
 
 contract PATDeployerScript is Script {
