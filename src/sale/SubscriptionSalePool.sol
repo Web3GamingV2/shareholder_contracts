@@ -225,6 +225,10 @@ contract SubscriptionSalePool is
         return subscriptions[_subscriptionId];
     }
 
+    function getSubscriptionMmutable(uint256 _subscriptionId) external view returns (SubscriptionMmutable memory) {
+        return subscriptionsMmutable[_subscriptionId];
+    }
+
     // --- 管理功能 ---
     function setSubscriptionDuration(uint256 _newDuration) external onlyOwner() {
         require(_newDuration > 0, "Duration must be positive");
