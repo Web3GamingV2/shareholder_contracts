@@ -112,9 +112,10 @@ contract SubscriptionSalePool is
         // 写入存储
         subscriptions[currentId] = newSubscription;
         subscriptionsMmutable[currentId] = newSubscriptionMmutable;
-        userSubscriptionIds[_subscriber].push(currentId);
-        
-        nextSubscriptionId++;
+
+        unchecked {
+            nextSubscriptionId++;
+        }
 
         // 触发事件
         emit SubscriptionCreated(currentId, _subscriber, _patAmount, _usdtAmount);
@@ -206,10 +207,6 @@ contract SubscriptionSalePool is
         return subscriptions[_subscriptionId];
     }
 
-    function getUserSubscriptionIds(address _user) external view returns (uint256[] memory) {
-        return userSubscriptionIds[_user];
-    }
-
     // --- 管理功能 ---
     function setSubscriptionDuration(uint256 _newDuration) external onlyOwner() {
         require(_newDuration > 0, "Duration must be positive");
@@ -232,6 +229,24 @@ contract SubscriptionSalePool is
         patToken.transfer(_to, _amount);
     }
 
+     /**
+     * @dev 获取本合约当前的 PAT 代币余额
+     * @return balance 当前的 PAT 余额
+     */
+    function getContractPatBalance() external view returns (uint256 balance) {
+        balance = patToken.balanceOf(address(this));
+    }
+
+     /**
+     * @dev 将本合约所有的 PAT 代币转回 InvestorSalePool 合约
+     * @notice 只有合约所有者可以调用
+     */
+    function transferAllPatToInvestorPool() external onlyOwner nonReentrant {
+        uint256 balance = patToken.balanceOf(address(this));
+        if (balance > 0) {
+            patToken.transfer(investorSalePoolAddress, balance);
+        }
+    }
 
     // --- UUPS Upgrade ---
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}

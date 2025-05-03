@@ -48,9 +48,6 @@ abstract contract SubscriptionSalePoolStorage is Initializable {
     mapping(uint256 => Subscription) public subscriptions;
     mapping(uint256 => SubscriptionMmutable) public subscriptionsMmutable;
 
-    // 用户地址到其所有申购记录ID列表的映射
-    mapping(address => uint256[]) public userSubscriptionIds;
-
     // --- 初始化 ---
     function __SubscriptionSalePoolStorage_init(
         address _patToken,

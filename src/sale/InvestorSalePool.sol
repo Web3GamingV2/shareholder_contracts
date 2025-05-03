@@ -127,13 +127,11 @@ contract InvestorSalePool is
 
         patCoin.transfer(subscriptionSalePoolAddress, patAmount);
         // 5. 调用 SubscriptionSalePool 创建申购记录
-        // expiryTimestamp = ISubscriptionSalePool(subscriptionSalePoolAddress).createSubscription(
-        //     _subscriber,
-        //     patAmount,
-        //     _usdtAmount
-        // );
-
-        uint256 _expiryTimestamp = block.timestamp;
+        uint256 _expiryTimestamp = ISubscriptionSalePool(subscriptionSalePoolAddress).createSubscription(
+            _subscriber,
+            patAmount,
+            _usdtAmount
+        );
 
         // 7. 触发事件
         emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, _expiryTimestamp);
