@@ -95,7 +95,7 @@ contract SubscriptionSalePool is
        // 只需要一个 require 来检查所有的前置条件
         require(_subscriber != address(0) && _patAmount > 0 && _usdtAmount > 0, "Invalid input values");
 
-          // ---> 新增：检查用户是否已有活跃的申购 <---
+        // ---> 新增：检查用户是否已有活跃的申购 <---
         uint256 existingSubId = userActiveSubscriptionId[_subscriber];
         if (existingSubId != 0) {
             // 确保之前的申购不是 PENDING 状态
