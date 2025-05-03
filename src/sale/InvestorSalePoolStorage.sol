@@ -125,7 +125,8 @@ abstract contract InvestorSalePoolStorage is Initializable {
         address indexed user,
         uint256 patAmount,
         uint256 usdtAmount,
-        uint256 expiryTimestamp
+        uint256 expiryTimestamp,
+        uint256 subscriptionId
     );
 
     function __InvestorSalePoolStorage_init(

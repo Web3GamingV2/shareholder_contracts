@@ -19,7 +19,7 @@ interface ISubscriptionSalePool {
         address _subscriber,
         uint256 _patAmount,
         uint256 _usdtAmount
-    ) external returns (uint256 expireTimestamp);
+    ) external returns (uint256 expireTimestamp, uint256 _currentId);
 
     function confirmSubscription(uint256 _subscriptionId) external returns (
         address _subscriber,

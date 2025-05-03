@@ -107,7 +107,7 @@ contract InvestorSalePool is
         nonReentrant
         whenNotPaused
         whenSaleActive
-        returns (uint256 expiryTimestamp)
+        returns (uint256 expiryTimestamp, uint256 currentId)
     {
         address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
         address _subscriber = _user; // 申购者是调用者
@@ -127,15 +127,18 @@ contract InvestorSalePool is
 
         patCoin.transfer(subscriptionSalePoolAddress, patAmount);
         // 5. 调用 SubscriptionSalePool 创建申购记录
-        uint256 _expiryTimestamp = ISubscriptionSalePool(subscriptionSalePoolAddress).createSubscription(
+        (uint256 _expiryTimestamp, uint256 _currentId) = ISubscriptionSalePool(subscriptionSalePoolAddress).createSubscription(
             _subscriber,
             patAmount,
             _usdtAmount
         );
 
         // 7. 触发事件
-        emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, _expiryTimestamp);
-        return _expiryTimestamp;
+        emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, _expiryTimestamp, _currentId);
+        return (
+            _expiryTimestamp,
+            _currentId
+        );
     }
 
     /**

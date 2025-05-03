@@ -90,7 +90,7 @@ contract SubscriptionSalePool is
         onlyInvestorSalePool
         whenNotPaused
         nonReentrant
-        returns (uint256 expireTimestamp)
+        returns (uint256 expireTimestamp, uint256 _currentId)
     {
        // 只需要一个 require 来检查所有的前置条件
         require(_subscriber != address(0) && _patAmount > 0 && _usdtAmount > 0, "Invalid input values");
@@ -128,7 +128,10 @@ contract SubscriptionSalePool is
         // 触发事件
         emit SubscriptionCreated(currentId, _subscriber, _patAmount, _usdtAmount);
 
-        return uint256(block.timestamp) + subscriptionDuration;
+        return (
+            uint256(block.timestamp) + subscriptionDuration,
+            currentId
+        );
     }
 
     /**
