@@ -39,7 +39,7 @@ contract SubscriptionSalePool is
 
     // --- 修饰符 ---
     modifier onlyInvestorSalePool() {
-        require(msg.sender == investorSalePoolAddress, "Caller is not the InvestorSalePool");
+        require(msg.sender == investorSalePoolAddress || msg.sender == owner(), "Caller is not the InvestorSalePool");
         _;
     }
 

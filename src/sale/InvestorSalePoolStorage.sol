@@ -121,12 +121,12 @@ abstract contract InvestorSalePoolStorage is Initializable {
     );
 
     // 新增的申购请求事件
-    event SubscriptionRequested(
+    event SubscriptionRequestedByUsdt(
         address indexed user,
+        uint256 indexed subscriptionId,
         uint256 patAmount,
         uint256 usdtAmount,
-        uint256 expiryTimestamp,
-        uint256 subscriptionId
+        uint256 expiryTimestamp
     );
 
     function __InvestorSalePoolStorage_init(

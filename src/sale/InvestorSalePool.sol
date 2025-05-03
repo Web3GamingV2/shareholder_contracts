@@ -134,7 +134,7 @@ contract InvestorSalePool is
         );
 
         // 7. 触发事件
-        emit SubscriptionRequested(_subscriber, patAmount, _usdtAmount, _expiryTimestamp, _currentId);
+        emit SubscriptionRequestedByUsdt(_subscriber, _currentId, patAmount, _usdtAmount, _expiryTimestamp);
         return (
             _expiryTimestamp,
             _currentId
