@@ -47,6 +47,8 @@ abstract contract SubscriptionSalePoolStorage is Initializable {
     // 申购ID到申购记录的映射
     mapping(uint256 => Subscription) public subscriptions;
     mapping(uint256 => SubscriptionMmutable) public subscriptionsMmutable;
+    // ---> 新增：追踪用户当前活跃的申购ID (0 表示没有活跃申购) <---
+    mapping(address => uint256) public userActiveSubscriptionId;
 
     // --- 初始化 ---
     function __SubscriptionSalePoolStorage_init(

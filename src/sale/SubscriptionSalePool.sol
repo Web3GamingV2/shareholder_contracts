@@ -95,6 +95,13 @@ contract SubscriptionSalePool is
        // 只需要一个 require 来检查所有的前置条件
         require(_subscriber != address(0) && _patAmount > 0 && _usdtAmount > 0, "Invalid input values");
 
+          // ---> 新增：检查用户是否已有活跃的申购 <---
+        uint256 existingSubId = userActiveSubscriptionId[_subscriber];
+        if (existingSubId != 0) {
+            // 确保之前的申购不是 PENDING 状态
+            require(subscriptionsMmutable[existingSubId].status != uint8(SubscriptionStatus.PENDING), "User already has an active subscription");
+        }
+
         uint256 currentId = nextSubscriptionId;
 
         // 只进行一次结构体初始化，减少存储写操作
@@ -112,6 +119,7 @@ contract SubscriptionSalePool is
         // 写入存储
         subscriptions[currentId] = newSubscription;
         subscriptionsMmutable[currentId] = newSubscriptionMmutable;
+        userActiveSubscriptionId[_subscriber] = currentId;
 
         unchecked {
             nextSubscriptionId++;
@@ -138,6 +146,8 @@ contract SubscriptionSalePool is
         // 更新状态
         subMmutable.status = uint8(SubscriptionStatus.CANCELLED);
 
+        userActiveSubscriptionId[sub.subscriber] = 0;
+
         emit SubscriptionCancelled(_subscriptionId, sub.subscriber);
     }
 
@@ -155,6 +165,8 @@ contract SubscriptionSalePool is
 
         // 更新状态
         subMmutable.status = uint8(SubscriptionStatus.EXPIRED);
+        
+        userActiveSubscriptionId[sub.subscriber] = 0;
 
         emit SubscriptionExpired(_subscriptionId, sub.subscriber);
     }
@@ -193,6 +205,8 @@ contract SubscriptionSalePool is
         subMmutable.status = uint8(SubscriptionStatus.CONFIRMED);
 
         emit SubscriptionConfirmed(_subscriptionId, _subscriber, newVestingWallet);
+
+        userActiveSubscriptionId[sub.subscriber] = 0;
 
         return (
             sub.subscriber,
