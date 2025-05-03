@@ -11,14 +11,13 @@ import { InvestorSalePoolAddr } from "../address.sol";
  * @dev 升级InvestorSalePool合约脚本
  * forge script script/upgrade/InvestorSalePoolUpgrade.s.sol:InvestorSalePoolUpgradesScripts --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key $WEB3GAMING_ETHERSCAN_API_KEY
 
-
 == Return ==
-0: address 0xBAC2B00c267d96618765cAE06eb992f159f30F8e
+0: address 0x2421Cad91f610E1Fc73b4247Dc344473a227ac92
 
 == Logs ==
   Deploying contracts with the account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
   InvestorSalePoolUpgrades Proxy deployed to: 0xC711619c140663737aDe3b54A4B4974C0FC58D8A
-  InvestorSalePoolUpgrades Implementation deployed to: 0xBAC2B00c267d96618765cAE06eb992f159f30F8e
+  InvestorSalePoolUpgrades Implementation deployed to: 0x2421Cad91f610E1Fc73b4247Dc344473a227ac92
   InvestorSalePoolUpgrades Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
 
   cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "version()(string memory)" 
