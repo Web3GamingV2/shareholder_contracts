@@ -24,6 +24,7 @@ abstract contract SubscriptionSalePoolStorage is Initializable {
         address subscriber;         // 申购人地址
         uint256 patAmount;          // 申购的PAT数量
         uint256 usdtAmount;         // 需要支付的USDT数量
+        uint256 timestamp;          // 申购时间戳
     }
 
     struct SubscriptionMmutable {

@@ -109,7 +109,8 @@ contract SubscriptionSalePool is
             id: currentId,
             subscriber: _subscriber,
             patAmount: _patAmount,
-            usdtAmount: _usdtAmount
+            usdtAmount: _usdtAmount,
+            timestamp: uint64(block.timestamp)
         });
 
         SubscriptionMmutable memory newSubscriptionMmutable = SubscriptionMmutable({
