@@ -259,6 +259,10 @@ contract SubscriptionSalePool is
         balance = patToken.balanceOf(address(this));
     }
 
+    function getUserActiveSubscriptionId (address _subscriber) external view returns (uint256) {
+        return userActiveSubscriptionId[_subscriber];
+    }
+
      /**
      * @dev 将本合约所有的 PAT 代币转回 InvestorSalePool 合约
      * @notice 只有合约所有者可以调用

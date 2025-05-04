@@ -23,9 +23,11 @@ import { InvestorSalePoolAddr } from "../address.sol";
   cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "version()(string memory)" 
   cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "getSubscriptionSalePool()(address)"
   cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "getContractPatBalance()(uint256)"
+  cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "userActiveSubscriptionId(uint256)(uint256)" 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
   cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "setSubscriptionSalePool(address)" 0x16bce603fb64F37c6A8Cf7bEa0151d657558AaC9
   cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "setSaleActive(bool)" true
-  cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "createSubscriptionByUsdt(address,uint256)(uint256)" 0x355eb1c3D6dF0642b3abe2785e821C574837C79f 1200000000
+  cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "createSubscriptionByUsdt(address,uint256)(uint256,uint256)" 0x355eb1c3D6dF0642b3abe2785e821C574837C79f 1200000000
+  
  */
 
 contract InvestorSalePoolUpgradesScripts is Script {
