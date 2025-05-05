@@ -122,8 +122,8 @@ contract InvestorSalePool is
         require(contractPatBalance >= patAmount, "Insufficient PAT balance in InvestorSalePool");
 
         // 检查用户是否有足够的 USDT 余额
-        uint256 userUsdtBalance = usdt.balanceOf(_user);
-        require(userUsdtBalance >= _usdtAmount, "Insufficient USDT balance");
+        // uint256 userUsdtBalance = usdt.balanceOf(_user);
+        // require(userUsdtBalance >= _usdtAmount, "Insufficient USDT balance");
 
         patCoin.transfer(subscriptionSalePoolAddress, patAmount);
         // 5. 调用 SubscriptionSalePool 创建申购记录
