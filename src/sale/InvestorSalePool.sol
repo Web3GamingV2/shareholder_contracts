@@ -151,6 +151,7 @@ contract InvestorSalePool is
         whenNotPaused
         whenSaleActive {
             address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
+            
             (address _user, uint256 _patAmount, uint256 _usdtAmount, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
             // TODO 记录购买信息 Gas 优化
             userPurchases[_user].push(Purchase({
@@ -166,7 +167,10 @@ contract InvestorSalePool is
             // 更新销售统计
             totalUsdtRaised += _usdtAmount;
             totalPatSold += _patAmount;
+            
+            // TODO 调用链下生成PDF
 
+            // 触发事件
             emit PurchaseConfirm(_user, _usdtAmount, _patAmount, _vestingWallet);
     }
 
