@@ -148,16 +148,18 @@ contract InvestorSalePool is
     function handleCCIPMessage(
         uint64 sourceChainSelector,
         address sender,
+        bytes32 messageId,
         bytes calldata data
     ) external override {
 
         // 检查是否是预期的链下消息
         require(chainlinkFCAddress != address(0), "ChainlinkFCAddress is zero");
 
-        emit CCIPMessageReceived(sourceChainSelector, sender, data);
+        emit CCIPMessageReceived(sourceChainSelector, sender, messageId, data);
         
         // 解码数据
-        // 通过 chainlinkFC 落库
+        // 通过 chainlinkFC 落库 记录申购数据 完整的购买流程已经结束
+        // 基于购买流程生成 NFT
         (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
 
         IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);

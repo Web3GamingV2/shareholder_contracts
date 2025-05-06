@@ -134,6 +134,7 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
     event CCIPMessageReceived(
         uint64 indexed sourceChainSelector,
         address sender,
+        bytes32 messageId,
         bytes data
     );
 
