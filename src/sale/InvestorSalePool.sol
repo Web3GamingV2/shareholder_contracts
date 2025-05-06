@@ -135,6 +135,8 @@ contract InvestorSalePool is
         );
 
         // 7. 触发事件
+        // consumer-contracts 的 payForEquity 方法需要这个地方的 txHash 所以这里是异步的(因为不知道啥时候打包完)
+        // 服务端会使用 the-graph 根据钱包地址获取用户的所有申购记录 这里包含 txHash 然后继续触发 payForEquity
         emit SubscriptionRequestedByUsdt(_subscriber, _currentId, patAmount, _usdtAmount, _expiryTimestamp);
         return (
             _expiryTimestamp,
@@ -153,6 +155,10 @@ contract InvestorSalePool is
         require(chainlinkFCAddress != address(0), "ChainlinkFCAddress is zero");
 
         emit CCIPMessageReceived(sourceChainSelector, sender, data);
+        
+        // 解码数据
+        // 通过 chainlinkFC 落库
+        (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
 
         IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
 
@@ -165,6 +171,10 @@ contract InvestorSalePool is
         //     callbackGasLimit
         // );
 
+    }
+
+    function decodeData(bytes memory data) public pure returns (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) {
+        (user, paymentTxHash, subscriptionTxHash) = abi.decode(data, (address, bytes32, bytes32));
     }
 
     /**

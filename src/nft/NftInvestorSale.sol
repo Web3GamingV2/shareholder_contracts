@@ -26,9 +26,12 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
     event MinterAdded(address indexed minter);
     event MinterRemoved(address indexed minter);
 
+    event MintProof(address indexed to, uint256 indexed id, uint256 amount, bytes data);
+    event MintProofBatch(address indexed to, uint256[] ids, uint256[] amounts);
+
     // 修饰符：只有授权铸造者可以调用
-    modifier onlyMinter() {
-        require(minters[msg.sender] || msg.sender == owner(), "Caller is not a minter");
+    modifier onlyMinter(address _minter) {
+        require(minters[_minter] || msg.sender == owner(), "Caller is not a minter");
         _;
     }
 
@@ -111,9 +114,10 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @param amount 铸造数量（对于凭证通常是 1）
      * @param data 附加数据（可选）
      */
-    function mintProof(address to, uint256 id, uint256 amount, bytes memory data) external onlyMinter {
+    function mintProof(address to, uint256 id, uint256 amount, bytes memory data) external onlyMinter(msg.sender) {
         require(to != address(0), "Invalid recipient");
         _mint(to, id, amount, data);
+        emit MintProof(to, id, amount, data);
     }
 
     /**
@@ -124,7 +128,7 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @param amounts 每个 ID 对应的铸造数量列表
      * @param data 附加数据（可选）
      */
-    function mintProofBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external onlyMinter {
+    function mintProofBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external onlyMinter(msg.sender) {
         require(to != address(0), "Invalid recipient");
         require(ids.length == amounts.length, "IDs and amounts length mismatch");
         _mintBatch(to, ids, amounts, data);
