@@ -12,6 +12,7 @@ import "../core/PATStorage.sol";
 import "../interface/IRedeemManager.sol";
 
 /**
+ * TODO: 暂时用不上了 直接从 polygon 的 Redeem 中赎回
  * @title RedeemManager
  * @dev 管理赎回请求的合约，负责处理跨链赎回操作
     initiateCrossChainRedemption 方法的调用场景主要在以下情况下：
