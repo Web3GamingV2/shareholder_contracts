@@ -141,6 +141,15 @@ contract InvestorSalePool is
         );
     }
 
+    // 接收 Ccip 消息 确定完成 usdt 付款行为
+    function handleCCIPMessage(
+        uint64 sourceChainSelector,
+        address sender,
+        bytes calldata data
+    ) external override {
+        emit CCIPMessageReceived(sourceChainSelector, sender, data); // Emit an event to indicate the rando
+    }
+
     /**
      * 用户在L2完成USDT交付后形成一条购买记录
      * ccip 调用此方法 (L2 Sender)

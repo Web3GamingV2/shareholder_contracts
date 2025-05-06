@@ -9,8 +9,9 @@ import "../interface/ITreasuryPool.sol";
 import "../interface/IVestingFactory.sol";
 import "../interface/IRedeemManager.sol";
 import "../interface/ISubscriptionSalePool.sol";
+import "../interface/ICrossChainReceiverHandler.sol";
 
-abstract contract InvestorSalePoolStorage is Initializable {
+abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverHandler {
 
     using SafeERC20 for IERC20;
     using SafeERC20 for IPATInterface;
@@ -127,6 +128,12 @@ abstract contract InvestorSalePoolStorage is Initializable {
         uint256 patAmount,
         uint256 usdtAmount,
         uint256 expiryTimestamp
+    );
+
+    event CCIPMessageReceived(
+        uint64 indexed sourceChainSelector,
+        address sender,
+        bytes data
     );
 
     function __InvestorSalePoolStorage_init(
