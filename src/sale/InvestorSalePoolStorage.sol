@@ -29,6 +29,7 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
     uint256 public treasuryRatioBps;       // 转入赎回池的比例（基点）
     address public multiSigWallet;         // 多签钱包地址
     bool public saleActive;                // 销售是否激活
+    address public chainlinkFCAddress;          // 赎回管理合约地址
 
     // 赎回请求映射
     mapping(bytes32 => RedemptionRequest) public redemptionRequests;

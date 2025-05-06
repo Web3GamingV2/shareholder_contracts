@@ -16,6 +16,7 @@ import "../stake/VestingFactoryStorage.sol";
 import "./InvestorSalePoolStorage.sol";
 import "../interface/IRedeemManager.sol";
 import "../utils/calculate.sol";
+import "../interface/IChainlinkFC.sol";
 
 /**
  * @title 投资者销售池
@@ -147,7 +148,23 @@ contract InvestorSalePool is
         address sender,
         bytes calldata data
     ) external override {
-        emit CCIPMessageReceived(sourceChainSelector, sender, data); // Emit an event to indicate the rando
+
+        // 检查是否是预期的链下消息
+        require(chainlinkFCAddress != address(0), "ChainlinkFCAddress is zero");
+
+        emit CCIPMessageReceived(sourceChainSelector, sender, data);
+
+        IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
+
+        // data -> payUsdtHash
+
+        // bytes32 requestId = chainlinkFC.sendRequest(
+        //     subscriptionId,
+        //     args,
+        //     source,
+        //     callbackGasLimit
+        // );
+
     }
 
     /**
@@ -161,7 +178,9 @@ contract InvestorSalePool is
         whenSaleActive {
             address subscriptionSalePoolAddress = address(subscriptionSalePool); // 确保地址不为零地址
             
+            // pat 开始锁仓
             (address _user, uint256 _patAmount, uint256 _usdtAmount, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
+            
             // TODO 记录购买信息 Gas 优化
             userPurchases[_user].push(Purchase({
                 usdtAmount: _usdtAmount,
@@ -302,6 +321,11 @@ contract InvestorSalePool is
     function setSubscriptionSalePool(address _subscriptionSalePool) external onlyOwner {
         require(_subscriptionSalePool!= address(0), "SubscriptionSalePool address is zero");
         subscriptionSalePool = ISubscriptionSalePool(_subscriptionSalePool);
+    }
+
+    function setChainlinkFCAddress (address _chainlinkFCAddress) external onlyOwner {
+        require(_chainlinkFCAddress!= address(0), "ChainlinkFCAddress address is zero");
+        chainlinkFCAddress = _chainlinkFCAddress;
     }
 
     function getSubscriptionSalePool() external view returns (address _subscriptionSalePoolAddress) {
