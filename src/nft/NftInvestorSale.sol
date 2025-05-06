@@ -15,6 +15,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // using StringsUpgradeable for uint256;
 
+    uint256 public nextTokenId = 0;
+
     // 映射：存储每个 token ID 对应的 URI
     mapping(uint256 => string) private _uris;
     
@@ -26,7 +28,7 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
     event MinterAdded(address indexed minter);
     event MinterRemoved(address indexed minter);
 
-    event MintProof(address indexed to, uint256 indexed id, uint256 amount, bytes data);
+    event MintProof(address indexed to, uint256 indexed currentTokenId, uint256 id, uint256 nextId, uint256 amount, bytes data);
     event MintProofBatch(address indexed to, uint256[] ids, uint256[] amounts);
 
     // 修饰符：只有授权铸造者可以调用
@@ -116,8 +118,14 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      */
     function mintProof(address to, uint256 id, uint256 amount, bytes memory data) external onlyMinter(msg.sender) {
         require(to != address(0), "Invalid recipient");
-        _mint(to, id, amount, data);
-        emit MintProof(to, id, amount, data);
+        uint256 nextId = nextTokenId;
+        uint256 currentTokenId = uint256(keccak256(abi.encode(to, id, nextId)));
+        unchecked {
+            nextTokenId++;
+        }
+        _mint(to, currentTokenId, amount, data);
+        // 服务端查询 the-graph 事件展示 mint 列表
+        emit MintProof(to, currentTokenId, id, nextId, amount, data);
     }
 
     /**

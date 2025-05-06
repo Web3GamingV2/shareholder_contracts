@@ -158,11 +158,11 @@ contract InvestorSalePool is
         emit CCIPMessageReceived(sourceChainSelector, sender, messageId, data);
         
         // 解码数据
-        // 通过 chainlinkFC 落库 记录申购数据 完整的购买流程已经结束
+        // 通过 chainlinkFC 落库 记录申购数据 完整的购买流程已经结束 根据 subscriptionTxHash 从 the-graph 查询 USDTReceived 事件
         // 基于购买流程生成 NFT
-        (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
+        // (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
 
-        IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
+        // IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
 
         // data -> payUsdtHash
 
