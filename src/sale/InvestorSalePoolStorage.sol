@@ -30,6 +30,7 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
     address public multiSigWallet;         // 多签钱包地址
     bool public saleActive;                // 销售是否激活
     address public chainlinkFCAddress;          // 赎回管理合约地址
+    uint64 public subscriptionId;            // Chainlink VRF订阅ID
 
     // 赎回请求映射
     mapping(bytes32 => RedemptionRequest) public redemptionRequests;
@@ -136,6 +137,14 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
         address sender,
         bytes32 messageId,
         bytes data
+    );
+
+    event CCIPMessageDecoded(
+        bytes32 indexed subscriptionTxHash, 
+        bytes32 indexed requestId,
+        bytes32 paymentTxHash,
+        bytes32 messageId,
+        address user
     );
 
     function __InvestorSalePoolStorage_init(

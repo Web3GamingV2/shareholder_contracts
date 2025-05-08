@@ -16,6 +16,7 @@ import "../stake/VestingFactoryStorage.sol";
 import "./InvestorSalePoolStorage.sol";
 import "../interface/IRedeemManager.sol";
 import "../utils/calculate.sol";
+import "../utils/sourceFC.sol";
 import "../interface/IChainlinkFC.sol";
 
 /**
@@ -150,28 +151,39 @@ contract InvestorSalePool is
         address sender,
         bytes32 messageId,
         bytes calldata data
-    ) external override {
+    ) external override nonReentrant onlyMultiSigOrOwner {
 
         // 检查是否是预期的链下消息
         require(chainlinkFCAddress != address(0), "ChainlinkFCAddress is zero");
+        require(subscriptionId != 0, "SubscriptionId is zero");
 
         emit CCIPMessageReceived(sourceChainSelector, sender, messageId, data);
         
         // 解码数据
         // 通过 chainlinkFC 落库 记录申购数据 完整的购买流程已经结束 根据 subscriptionTxHash 从 the-graph 查询 USDTReceived 事件
         // 基于购买流程生成 NFT
-        // (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
+        (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
 
-        // IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
+        IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
+
+        string[] memory args = new string[](4);
+        args[0] = string(abi.encodePacked(messageId));
+        args[1] = string(abi.encodePacked(user));
+        args[2] = string(abi.encodePacked(paymentTxHash));
+        args[3] = string(abi.encodePacked(subscriptionTxHash));
+
+        string memory source = SourceFC.getFC();
+        uint32 callbackGasLimit = 300000;
 
         // data -> payUsdtHash
+        bytes32 requestId = chainlinkFC.sendRequest(
+            subscriptionId,
+            args,
+            source,
+            callbackGasLimit
+        );
 
-        // bytes32 requestId = chainlinkFC.sendRequest(
-        //     subscriptionId,
-        //     args,
-        //     source,
-        //     callbackGasLimit
-        // );
+        emit CCIPMessageDecoded(subscriptionTxHash, requestId, paymentTxHash, messageId, user);
 
     }
 
@@ -338,6 +350,11 @@ contract InvestorSalePool is
     function setChainlinkFCAddress (address _chainlinkFCAddress) external onlyOwner {
         require(_chainlinkFCAddress!= address(0), "ChainlinkFCAddress address is zero");
         chainlinkFCAddress = _chainlinkFCAddress;
+    }
+
+    function setSubscriptionId (uint64 _subscriptionId) external onlyOwner {
+        require(_subscriptionId > 0, "SubscriptionId must be positive");
+        subscriptionId = _subscriptionId;
     }
 
     function getSubscriptionSalePool() external view returns (address _subscriptionSalePoolAddress) {
