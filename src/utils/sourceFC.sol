@@ -28,6 +28,6 @@ library SourceFC {
             "throw Error('Request failed');"
             "}"
             "const { data } = apiResponse;"
-            "return Functions.encodeString(data.id);";
+            "return Functions.encodeString(data.onChainData);";
     }
 }
