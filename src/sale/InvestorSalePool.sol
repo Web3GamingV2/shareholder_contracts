@@ -138,7 +138,9 @@ contract InvestorSalePool is
         // 7. 触发事件
         // consumer-contracts 的 payForEquity 方法需要这个地方的 txHash 所以这里是异步的(因为不知道啥时候打包完)
         // 服务端会使用 the-graph 根据钱包地址获取用户的所有申购记录 这里包含 txHash 然后继续触发 payForEquity
+        // _currentId 是申购记录的ID 用于后续的赎回操作 就是_subscriptionId
         emit SubscriptionRequestedByUsdt(_subscriber, _currentId, patAmount, _usdtAmount, _expiryTimestamp);
+
         return (
             _expiryTimestamp,
             _currentId
@@ -162,17 +164,23 @@ contract InvestorSalePool is
         // 解码数据
         // 通过 chainlinkFC 落库 记录申购数据 完整的购买流程已经结束 根据 subscriptionTxHash 从 the-graph 查询 USDTReceived 事件
         // 基于购买流程生成 NFT
-        (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) = decodeData(data);
+        (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash, uint256 _currentId) = decodeData(data);
+
+        emit CCIPMessageDecoded(subscriptionTxHash, _currentId, paymentTxHash, messageId, user);
+
+        // 确认申购请求 pat 锁仓
+        confirmSubscriptionRequest(_currentId);
 
         IChainlinkFC chainlinkFC = IChainlinkFC(chainlinkFCAddress);
 
-        string[] memory args = new string[](4);
+        string[] memory args = new string[](5);
         args[0] = string(abi.encodePacked(messageId));
         args[1] = string(abi.encodePacked(user));
         args[2] = string(abi.encodePacked(paymentTxHash));
         args[3] = string(abi.encodePacked(subscriptionTxHash));
+        args[4] = string(abi.encodePacked(_currentId));
 
-        string memory source = SourceFC.getFC();
+        string memory source = SourceFC.getFCPost();
         uint32 callbackGasLimit = 300000;
 
         // data -> payUsdtHash
@@ -182,13 +190,11 @@ contract InvestorSalePool is
             source,
             callbackGasLimit
         );
-
-        emit CCIPMessageDecoded(subscriptionTxHash, requestId, paymentTxHash, messageId, user);
-
+        emit CCIPRequestFinished(subscriptionTxHash, _currentId, requestId, paymentTxHash, messageId, user);
     }
 
-    function decodeData(bytes memory data) public pure returns (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash) {
-        (user, paymentTxHash, subscriptionTxHash) = abi.decode(data, (address, bytes32, bytes32));
+    function decodeData(bytes memory data) public pure returns (address user, bytes32 paymentTxHash, bytes32 subscriptionTxHash, uint256 _currentId) {
+        (user, paymentTxHash, subscriptionTxHash, _currentId) = abi.decode(data, (address, bytes32, bytes32, uint256));
     }
 
     /**
@@ -196,7 +202,7 @@ contract InvestorSalePool is
      * ccip 调用此方法 (L2 Sender)
      * 成功后chainlinkFC调用链下生成购买PDF用户决定是否IPFS
      */
-    function confirmSubscriptionRequest(uint256 _subscriptionId) external
+    function confirmSubscriptionRequest(uint256 _subscriptionId) public
         nonReentrant
         whenNotPaused
         whenSaleActive {
@@ -219,8 +225,6 @@ contract InvestorSalePool is
             // 更新销售统计
             totalUsdtRaised += _usdtAmount;
             totalPatSold += _patAmount;
-            
-            // TODO 调用链下生成PDF
 
             // 触发事件
             emit PurchaseConfirm(_user, _usdtAmount, _patAmount, _vestingWallet);

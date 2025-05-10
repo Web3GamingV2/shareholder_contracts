@@ -141,7 +141,16 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
 
     event CCIPMessageDecoded(
         bytes32 indexed subscriptionTxHash, 
-        bytes32 indexed requestId,
+        uint256 indexed currentIndex,
+        bytes32 paymentTxHash,
+        bytes32 messageId,
+        address user
+    );
+
+    event CCIPRequestFinished(
+        bytes32 indexed subscriptionTxHash,
+        uint256 indexed currentIndex,
+        bytes32 requestId,
         bytes32 paymentTxHash,
         bytes32 messageId,
         address user
