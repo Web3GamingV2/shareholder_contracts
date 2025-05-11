@@ -12,12 +12,12 @@ import { SubscriptionSalePoolAddr } from "../address.sol";
  * forge script script/upgrade/SubscriptionSalePoolUpgrade.s.sol:SubscriptionSalePoolUpgradesScripts --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key $WEB3GAMING_ETHERSCAN_API_KEY
 
 == Return ==
-0: address 0xd8210Ec854A11BF2786e921319e7801Deb83Bac2
+0: address 0x260271DfdfF209607721462A30B330979d37ce82
 
 == Logs ==
   Deploying contracts with the account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
   SubscriptionSalePoolUpgrades Proxy deployed to: 0x16bce603fb64F37c6A8Cf7bEa0151d657558AaC9
-  SubscriptionSalePoolUpgrades Implementation deployed to: 0xd8210Ec854A11BF2786e921319e7801Deb83Bac2
+  SubscriptionSalePoolUpgrades Implementation deployed to: 0x260271DfdfF209607721462A30B330979d37ce82
   SubscriptionSalePoolUpgrades Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
 
   cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0x16bce603fb64F37c6A8Cf7bEa0151d657558AaC9 "getContractPatBalance()(uint256)"

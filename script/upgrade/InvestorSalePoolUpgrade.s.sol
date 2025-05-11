@@ -13,12 +13,12 @@ import { InvestorSalePoolAddr } from "../address.sol";
 
 
 == Return ==
-0: address 0x6e99b88981A637114b8C6CB6504c6b9604BEE22a
+0: address 0x5d332cF887B4A68973855A89809a944D580e90e9
 
 == Logs ==
   Deploying contracts with the account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
   InvestorSalePoolUpgrades Proxy deployed to: 0xC711619c140663737aDe3b54A4B4974C0FC58D8A
-  InvestorSalePoolUpgrades Implementation deployed to: 0x6e99b88981A637114b8C6CB6504c6b9604BEE22a
+  InvestorSalePoolUpgrades Implementation deployed to: 0x5d332cF887B4A68973855A89809a944D580e90e9
   InvestorSalePoolUpgrades Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
 
   cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xC711619c140663737aDe3b54A4B4974C0FC58D8A "version()(string memory)" 
