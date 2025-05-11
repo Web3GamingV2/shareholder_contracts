@@ -128,7 +128,8 @@ contract VestingFactory is
     function createVestingWallet(
         address _beneficiary,
         uint256 _amount,
-        uint64 _startTimestamp
+        uint64 _startTimestamp,
+        uint256 _subscriptionId
     ) public onlyInvestorSalePool whenNotPaused nonReentrant returns (address) {
 
         require(_beneficiary != address(0), "Invalid beneficiary");
@@ -150,6 +151,7 @@ contract VestingFactory is
             vestingStart, // 线性释放的起点
             poolInfo.vestingDuration // 线性释放的持续时间
         );
+
         address vestingWalletAddr = address(vestingWallet);
 
         // 记录锁仓信息
@@ -159,7 +161,8 @@ contract VestingFactory is
             startTime: vestingStart,
             endTime: vestingEnd,
             totalAmount: _amount,
-            isEarlyRedeemed: false
+            isEarlyRedeemed: false,
+            subscriptionId: _subscriptionId
         });
         
         // 检查用户是否有足够的代币
@@ -188,17 +191,37 @@ contract VestingFactory is
      function batchCreateVestingWallets(
         address[] calldata _beneficiaries,
         uint256[] calldata _amounts,
+        uint256[] calldata _subscriptionIds,
         uint64 _startTimestamp
     ) public onlyInvestorSalePool whenNotPaused nonReentrant {
         require(_beneficiaries.length == _amounts.length, "Arrays length mismatch");
         require(_beneficiaries.length > 0, "Empty arrays");
         require(poolConfigs[PATStorage.PoolType.INVESTOR].isActive, "Investor pool not active");
-        // TODO 有一个锁仓钱包失败 是否全部revert掉了
          for (uint256 i = 0; i < _beneficiaries.length; i++) {
             if (_beneficiaries[i] != address(0) && _amounts[i] > 0) {
-                createVestingWallet(_beneficiaries[i], _amounts[i], _startTimestamp);
+                createVestingWallet(_beneficiaries[i], _amounts[i], _startTimestamp, _subscriptionIds[i]);
             }
         }
+    }
+
+    function getVestingInfo(address _vestingWallet) external view returns (
+        PATStorage.PoolType poolType,
+        address beneficiary,
+        uint64 startTime,
+        uint64 endTime,
+        uint256 totalAmount,
+        bool isEarlyRedeemed,
+        uint256 subscriptionId) {
+        require(vestingInfos[_vestingWallet].beneficiary!= address(0), "Invalid vesting wallet");
+        return (
+            vestingInfos[_vestingWallet].poolType,
+            vestingInfos[_vestingWallet].beneficiary,
+            vestingInfos[_vestingWallet].startTime,
+            vestingInfos[_vestingWallet].endTime,
+            vestingInfos[_vestingWallet].totalAmount,
+            vestingInfos[_vestingWallet].isEarlyRedeemed,
+            vestingInfos[_vestingWallet].subscriptionId
+        );
     }
 
      /**

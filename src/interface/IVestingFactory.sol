@@ -25,6 +25,7 @@ interface IVestingFactory {
         uint64 endTime;       // 结束时间
         uint256 totalAmount;  // 总金额
         bool isEarlyRedeemed;    // 是否已提前赎回
+        uint256 subscriptionId; 
     }
 
     // 事件
@@ -41,8 +42,8 @@ interface IVestingFactory {
     function setPoolConfig(PATStorage.PoolType _poolType, uint64 _cliffDuration, uint64 _vestingDuration, uint256 _initialRelease, bool _canEarlyRedeem) external;
     
     // 为指定受益人创建一个锁仓钱包
-    function createVestingWallet(address _beneficiary, uint256 _amount, uint64 _startTimestamp) external returns (address);
-    function batchCreateVestingWallets(address[] calldata _beneficiaries, uint256[] calldata _amounts, uint64 _startTimestamp) external;
+    function createVestingWallet(address _beneficiary, uint256 _amount, uint64 _startTimestamp, uint256 _subscriptionId) external returns (address);
+    function batchCreateVestingWallets(address[] calldata _beneficiaries, uint256[] calldata _amounts, uint256[] calldata _subscriptionIds, uint64 _startTimestamp) external;
 
     // 提前赎回锁仓钱包中的代币
     function earlyRedeem(address _vestingWallet) external;

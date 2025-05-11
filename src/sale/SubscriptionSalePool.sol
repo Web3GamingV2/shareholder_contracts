@@ -197,7 +197,8 @@ contract SubscriptionSalePool is
         address newVestingWallet = IVestingFactory(vestingFactory).createVestingWallet(
             sub.subscriber,
             sub.patAmount,
-            currentVestingStartTime
+            currentVestingStartTime,
+            _subscriptionId
         );
         require(newVestingWallet != address(0), "Vesting wallet creation failed");
 

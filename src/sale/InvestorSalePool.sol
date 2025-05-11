@@ -212,7 +212,6 @@ contract InvestorSalePool is
             // pat 开始锁仓
             (address _user, uint256 _patAmount, uint256 _usdtAmount, address _vestingWallet) = ISubscriptionSalePool(subscriptionSalePoolAddress).confirmSubscription(_subscriptionId);
             
-            // TODO 记录购买信息 Gas 优化
             userPurchases[_user].push(Purchase({
                 index: _subscriptionId,
                 usdtAmount: _usdtAmount,
