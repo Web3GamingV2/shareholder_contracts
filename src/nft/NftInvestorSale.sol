@@ -148,7 +148,7 @@ contract NftInvestorSale is
             nextTokenId++;
         }
         _mint(to, currentTokenId, amount, data);
-        // 服务端查询 the-graph 事件展示 mint 列表
+        // 服务端查询直接使用方法 getNftMetadataFromGraph 从 the-graph 事件展示 mint 列表
         emit MintProof(to, currentTokenId, id, nextId, amount, data);
     }
 
