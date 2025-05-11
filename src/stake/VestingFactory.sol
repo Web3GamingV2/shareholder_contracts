@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/finance/VestingWallet.sol";
 
+import "../core/Basic.sol";
 import "../interface/IPAT.sol";
 import "./VestingFactoryStorage.sol";
 import "../core/PATStorage.sol";
@@ -19,7 +20,8 @@ contract VestingFactory is
     UUPSUpgradeable,
     ReentrancyGuardUpgradeable,
     PausableUpgradeable,
-    VestingFactoryStorage
+    VestingFactoryStorage,
+    Basic
 {
     using SafeERC20 for IPATInterface;
 

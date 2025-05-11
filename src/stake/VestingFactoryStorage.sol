@@ -35,9 +35,6 @@ abstract contract VestingFactoryStorage is Initializable, IVestingFactory {
     // 授权管理员映射 - 一期先预留，暂不使用
     mapping(address => bool) public authorizedAdmins;
 
-    // 用于存储实现版本的变量
-    uint256 public version;
-
     function __VestingFactoryStorage_init(
         address _patToken,
         address _investorSalePool,
@@ -48,7 +45,6 @@ abstract contract VestingFactoryStorage is Initializable, IVestingFactory {
         investorSalePool = _investorSalePool;
         multiSigWallet = _multiSigWallet;
         earlyRedemptionFeeBps = _earlyRedemptionFeeBps;
-        version = 1;
     }
     
     // 保留的存储槽位，用于未来扩展
