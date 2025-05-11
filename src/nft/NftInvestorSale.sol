@@ -5,17 +5,29 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+
+import "../core/Basic.sol";
 
 /**
  * @title NftInvestorSale
  * @dev ERC1155 合约，用于发放投资者销售购买凭证 NFT。
  * 每个凭证代表一次成功的购买，使用不同的 ID 可以区分不同的销售轮次或类型。
  */
-contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
-    // using StringsUpgradeable for uint256;
+contract NftInvestorSale is
+    Initializable,
+    ERC1155Upgradeable,
+    OwnableUpgradeable,
+    UUPSUpgradeable, 
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
+    Basic {
 
-    uint256 public nextTokenId = 0;
+    uint256 public nextTokenId;
+
+    string public _baseURI;
 
     // 映射：存储每个 token ID 对应的 URI
     mapping(uint256 => string) private _uris;
@@ -37,6 +49,11 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
         _;
     }
 
+    modifier hasBasicURI() {
+        require(bytes(_baseURI).length > 0, "Base URI is not set");
+        _;
+    }
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -47,10 +64,17 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @param _owner 合约所有者地址
      * @param _initialBaseURI 初始的基础 URI (可以为空，后续通过 setURI 设置)
      */
-    function initialize(address _owner, string memory _initialBaseURI) public initializer {
+    function initialize(
+        address _owner,
+        string memory _initialBaseURI) public initializer {
         __ERC1155_init(_initialBaseURI);
         __Ownable_init(_owner);
         __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
+        __Pausable_init();
+        _baseURI = _initialBaseURI;
+        nextTokenId = 0;
+        minters[_owner] = true;
     }
 
     /**
@@ -59,7 +83,7 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @param id 要设置 URI 的 token ID
      * @param newuri 新的 URI 字符串
      */
-    function setURI(uint256 id, string memory newuri) external onlyOwner {
+    function setURI(uint256 id, string memory newuri) external onlyOwner whenNotPaused()  {
         _uris[id] = newuri;
         emit URIUpdated(id, newuri);
     }
@@ -116,7 +140,7 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @param amount 铸造数量（对于凭证通常是 1）
      * @param data 附加数据（可选）
      */
-    function mintProof(address to, uint256 id, uint256 amount, bytes memory data) external onlyMinter(msg.sender) {
+    function mintProof(address to, uint256 id, uint256 amount, bytes memory data) external hasBasicURI() onlyMinter(msg.sender) whenNotPaused {
         require(to != address(0), "Invalid recipient");
         uint256 nextId = nextTokenId;
         uint256 currentTokenId = uint256(keccak256(abi.encode(to, id, nextId)));
@@ -136,7 +160,7 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @param amounts 每个 ID 对应的铸造数量列表
      * @param data 附加数据（可选）
      */
-    function mintProofBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external onlyMinter(msg.sender) {
+    function mintProofBatch(address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) external hasBasicURI() onlyMinter(msg.sender) whenNotPaused {
         require(to != address(0), "Invalid recipient");
         require(ids.length == amounts.length, "IDs and amounts length mismatch");
         _mintBatch(to, ids, amounts, data);
@@ -146,7 +170,8 @@ contract NftInvestorSale is Initializable, ERC1155Upgradeable, OwnableUpgradeabl
      * @dev 设置基础 URI
      * @param newBaseURI 新的基础 URI
      */
-    function setBaseURI(string memory newBaseURI) external onlyOwner {
+    function setBaseURI(string memory newBaseURI) external onlyOwner whenNotPaused {
+        _baseURI = newBaseURI;
         _setURI(newBaseURI);
     }
 
