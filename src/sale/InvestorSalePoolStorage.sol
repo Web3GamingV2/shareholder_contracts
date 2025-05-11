@@ -57,6 +57,7 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
 
     // 用户购买记录
     struct Purchase {
+        uint256 index;                     // 索引
         uint256 usdtAmount;                // USDT金额
         uint256 patAmount;                 // PAT金额
         uint64 timestamp;                  // 时间戳
@@ -73,11 +74,13 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
     
     // 事件
     event PurchaseConfirm(
+        uint256 indexed subscriptionId,
         address indexed user,
         uint256 usdtAmount,
         uint256 patAmount,
         address vestingWallet
     );
+
     event TierConfigUpdated(
         uint8 tier,
         uint256 minAmount,
@@ -85,6 +88,7 @@ abstract contract InvestorSalePoolStorage is Initializable, ICrossChainReceiverH
         uint256 price,
         bool isActive
     );
+
     event TreasuryRatioUpdated(uint256 oldRatio, uint256 newRatio);
     event VestingStartTimeUpdated(uint64 oldTime, uint64 newTime);
     event SaleStateUpdated(bool isActive);

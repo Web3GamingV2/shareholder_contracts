@@ -190,6 +190,7 @@ contract InvestorSalePool is
             source,
             callbackGasLimit
         );
+
         emit CCIPRequestFinished(subscriptionTxHash, _currentId, requestId, paymentTxHash, messageId, user);
     }
 
@@ -213,6 +214,7 @@ contract InvestorSalePool is
             
             // TODO 记录购买信息 Gas 优化
             userPurchases[_user].push(Purchase({
+                index: _subscriptionId,
                 usdtAmount: _usdtAmount,
                 patAmount: _patAmount,
                 timestamp: uint64(block.timestamp),
@@ -227,7 +229,7 @@ contract InvestorSalePool is
             totalPatSold += _patAmount;
 
             // 触发事件
-            emit PurchaseConfirm(_user, _usdtAmount, _patAmount, _vestingWallet);
+            emit PurchaseConfirm(_subscriptionId, _user, _usdtAmount, _patAmount, _vestingWallet);
     }
 
     function getUserPurchases(address _user) public view returns (Purchase[] memory) {
