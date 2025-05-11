@@ -19,6 +19,8 @@ import { VestingFactoryAddr } from "../address.sol";
   VestingFactoryUpgrades Proxy deployed to: 0x4B860eA39Af4b41EAd50e3f6531eBbc482DA7aF5
   VestingFactoryUpgrades Implementation deployed to: 0x2Ca1c2Cf81bA8305eA1c7Ec3d8ed7E8200370a75
   VestingFactoryUpgrades Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+
+  cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0x4B860eA39Af4b41EAd50e3f6531eBbc482DA7aF5 "version()(string memory)" 
  
  */
 
