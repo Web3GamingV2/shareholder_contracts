@@ -8,3 +8,5 @@ address constant InvestorSalePoolAddr = 0xC711619c140663737aDe3b54A4B4974C0FC58D
 address constant SubscriptionSalePoolAddr = 0x16bce603fb64F37c6A8Cf7bEa0151d657558AaC9;
 
 address constant USDTAddr = 0x419Fe9f14Ff3aA22e46ff1d03a73EdF3b70A62ED;
+
+address constant NftInvestorSaleAddr = 0x23600c0EF51e2d02603E043EE444fcA77CE55B62;
