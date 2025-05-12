@@ -10,7 +10,7 @@ import { NftInvestorSaleAddr } from "../address.sol";
  * @title 升级InvestorSalePool合约脚本
  * @dev 升级InvestorSalePool合约脚本
  * forge script script/upgrade/NftInvestorSaleUpgrade.s.sol:NftInvestorSaleUpgradesScripts --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key $WEB3GAMING_ETHERSCAN_API_KEY
-
+  cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "mintedSupply()"
  
  */
 

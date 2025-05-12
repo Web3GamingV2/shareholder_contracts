@@ -12,6 +12,10 @@ import {NftInvestorSale} from "../src/nft/NftInvestorSale.sol";
  * forge clean && forge build
  * forge script script/NftInvestorSaleDeployer.s.sol:NftInvestorSaleDepolyerScript --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key $WEB3GAMING_ETHERSCAN_API_KEY
 
+    cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0x23600c0EF51e2d02603E043EE444fcA77CE55B62 "setBaseURI(string)()" "https://ffd6-103-228-65-162.ngrok-free.app/api/metadata/token-id/{id}"
+    cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0x23600c0EF51e2d02603E043EE444fcA77CE55B62 "_baseURI()(string memory)"
+    cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0x23600c0EF51e2d02603E043EE444fcA77CE55B62 "mintProof(address,uint256,uint256,bytes)()" 0x355eb1c3D6dF0642b3abe2785e821C574837C79f 12345 1 0x
+
  == Return ==
 0: address 0x23600c0EF51e2d02603E043EE444fcA77CE55B62
 

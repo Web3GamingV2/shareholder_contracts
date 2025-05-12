@@ -29,6 +29,9 @@ contract NftInvestorSale is
 
     string public _baseURI;
 
+    string public name;
+    string public symbol;
+
     // 映射：存储每个 token ID 对应的 URI
     mapping(uint256 => string) private _uris;
     
@@ -66,7 +69,8 @@ contract NftInvestorSale is
      */
     function initialize(
         address _owner,
-        string memory _initialBaseURI) public initializer {
+        string memory _initialBaseURI
+        ) public initializer {
         __ERC1155_init(_initialBaseURI);
         __Ownable_init(_owner);
         __UUPSUpgradeable_init();
@@ -173,6 +177,18 @@ contract NftInvestorSale is
     function setBaseURI(string memory newBaseURI) external onlyOwner whenNotPaused {
         _baseURI = newBaseURI;
         _setURI(newBaseURI);
+    }
+
+    function setNftInfos(string memory _name, string memory _symbol) external onlyOwner {
+        name = _name;
+        symbol = _symbol;
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     // --- UUPS Upgrade ---
