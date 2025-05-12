@@ -193,4 +193,8 @@ contract NftInvestorSale is
 
     // --- UUPS Upgrade ---
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
 }

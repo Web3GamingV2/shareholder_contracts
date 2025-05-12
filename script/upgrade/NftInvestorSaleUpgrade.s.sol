@@ -10,8 +10,16 @@ import { NftInvestorSaleAddr } from "../address.sol";
  * @title 升级InvestorSalePool合约脚本
  * @dev 升级InvestorSalePool合约脚本
  * forge script script/upgrade/NftInvestorSaleUpgrade.s.sol:NftInvestorSaleUpgradesScripts --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY --broadcast --verify --etherscan-api-key $WEB3GAMING_ETHERSCAN_API_KEY
-  cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0xA51Ecf228F86195665c09a3fB621128F1CE57eF1 "mintedSupply()"
- 
+  cast call --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL 0x23600c0EF51e2d02603E043EE444fcA77CE55B62 "version()(string memory)" 
+  cast send --rpc-url $WEB3GAMING_ALCHEMY_RPC_URL --private-key $WEB3GAMING_PRIVATE_KEY 0x23600c0EF51e2d02603E043EE444fcA77CE55B62 "setNftInfos(string,string)()" "NftInvestorSale" "SBNG"
+== Return ==
+0: address 0xa8fe75deEC2C2Eb0f46eE55577E16F5ea27e6416
+
+== Logs ==
+  Deploying contracts with the account: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
+  NftInvestorSaleUpgrades Proxy deployed to: 0x23600c0EF51e2d02603E043EE444fcA77CE55B62
+  NftInvestorSaleUpgrades Implementation deployed to: 0xa8fe75deEC2C2Eb0f46eE55577E16F5ea27e6416
+  NftInvestorSaleUpgrades Owner set to: 0x355eb1c3D6dF0642b3abe2785e821C574837C79f
  */
 
 contract NftInvestorSaleUpgradesScripts is Script {
