@@ -127,6 +127,27 @@ contract NftInvestorSale is
         emit MinterAdded(_minter);
     }
 
+    // 关键修改：覆写_update限制转账
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal virtual override {
+        // 仅允许铸造(from==0)或销毁(to==0)
+        require(
+            from == address(0) || to == address(0),
+            "SoulboundERC1155: Tokens are non-transferable"
+        );
+        super._update(from, to, ids, values);
+    }
+
+     // 禁用授权
+    function setApprovalForAll(address operator, bool approved) public virtual override {
+        require(approved == false, "SoulboundERC1155: Approvals disabled");
+        super.setApprovalForAll(operator, approved);
+    }
+
     /**
      * @dev 移除铸造者权限
      * @param _minter 要移除的铸造者地址
